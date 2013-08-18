@@ -31,17 +31,33 @@ Ext.define('CustomApp', {
       this.addEvents('load');
     },
 
-    launch: function() {
+    addContent: function(tb) {
       var me = this;
-      var tb = this.getContext().getTimeboxScope();
       console.dir(this.getContext());
-
-      this.showMask();
 
       me.on('load', function () {
         console.log('loaded');
         me._onLoad(me);
       });
+
+      me.onScopeChange(tb);
+    },
+
+    onScopeChange: function (tb) {
+      var me = this;
+
+      me.initiatives = null;
+      me.features = null;
+      me.stories = null;
+      me.projects = null;
+
+      me.loadData(tb);
+    },
+
+    loadData: function (tb) {
+      var me = this;
+
+      me.showMask();
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Feature',
@@ -87,18 +103,18 @@ Ext.define('CustomApp', {
 
     _projectsLoaded: function (store, recs, success) {
       var me = this;
-      var pis = {};
+      //var pis = {};
 
-      Ext.Array.each([__PROJECT_OIDS_IN_SCOPE__], function (elt) {
-        pis[elt] = 1;
-      });
+      //Ext.Array.each([__PROJECT_OIDS_IN_SCOPE__], function (elt) {
+        //pis[elt] = 1;
+      //});
 
       me.projects = {};
 
       Ext.Array.each(recs, function (elt) {
-        if ((elt.get('Children').length === 0) && (pis.hasOwnProperty(elt.get('ObjectID')))) {
-          me.projects[elt.get('ObjectID')] = elt;
-        }
+        //if ((elt.get('Children').length === 0) && (pis.hasOwnProperty(elt.get('ObjectID')))) {
+        me.projects[elt.get('ObjectID')] = elt;
+        //}
       });
 
       if (me.stories && me.features && me.initiatives && me.projects) {

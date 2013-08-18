@@ -20,17 +20,33 @@ Ext.define('CustomApp', {
       this.addEvents('load');
     },
 
-    launch: function() {
+    addContent: function(tb) {
       var me = this;
-      var tb = this.getContext().getTimeboxScope();
       console.dir(this.getContext());
-
-      this.showMask();
 
       me.on('load', function () {
         console.log('loaded');
         me._onLoad(me);
       });
+
+      me.onScopeChange(tb);
+    },
+
+    onScopeChange: function (tb) {
+      var me = this;
+
+      me.initiatives = null;
+      me.features = null;
+      me.stories = null;
+      me.projects = null;
+
+      me.loadData(tb);
+    },
+
+    loadData: function (tb) {
+      var me = this;
+
+      me.showMask();
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Feature',
