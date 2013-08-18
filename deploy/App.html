@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FeatureMap</title>
+
+    <script type="text/javascript" src="//rally1.rallydev.com/apps/2.0rc1/sdk.js?wsapiVersion=1.43"></script>
+
+
+
+    <script type="text/javascript">
+        Rally.onReady(function () {
+Ext.define('CustomApp', {
+    extend: 'Rally.app.TimeboxScopedApp',
+    mixins: {
+        observable: 'Ext.util.Observable'
+    },
+
+    scopeType: 'release',
+    componentCls: 'app',
+
+    storiesLoaded: false,
+    featuresLoaded: false,
+    initiativesLoaded: false,
+
+    constructor: function (config) {
+      this.callParent([config]);
+      this.mixins.observable.constructor.call(this, config);
+
+      this.addEvents('load');
+    },
+
+    launch: function() {
+      var me = this;
+      var tb = this.getContext().getTimeboxScope();
+      console.dir(this.getContext());
+
+      me.on('load', function () {
+        console.log('loaded');
+        me._onLoad(me);
+      });
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        model: 'PortfolioItem/Feature',
+        fetch: true,
+        filters: tb.getQueryFilter(),
+        listeners: {
+          load: me._featuresLoaded,
+          scope: me
+        }
+      }).load();
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        model: 'HierarchicalRequirement',
+        fetch: true,
+        filters: [{
+          property: 'Feature.Release.Name',
+          value: tb.getRecord().get('Name')
+        }, {
+          property: 'Feature.Release.ReleaseStartDate',
+          value: tb.getRecord().raw.ReleaseStartDate
+        }, {
+          property: 'Feature.Release.ReleaseDate',
+          value: tb.getRecord().raw.ReleaseDate
+        }, {
+          property: 'DirectChildrenCount',
+          value: 0
+        }],
+        listeners: {
+          load: me._storiesLoaded,
+          scope: me
+        }
+      }).load();
+    },
+
+    _featuresLoaded: function (store, recs, success) {
+      var initiatives = {};
+      var query = [];
+      var me = this;
+
+      me.features = {};
+
+      Ext.Array.each(recs, function(elt) {
+        if (elt.get('Parent')) {
+          initiatives[Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref)] = 1;
+        }
+        me.features[parseInt(elt.get('ObjectID') + '', 10)] = elt;
+      });
+      me.featuresLoaded = true;
+
+      Ext.Object.each(initiatives, function(key) {
+        query.push({property: 'ObjectID', operator: '=', value: key});
+      });
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        model: 'PortfolioItem/Initiative',
+        filters: query,
+        fetch: true,
+        listeners: {
+          load: me._initiativesLoaded,
+          scope: me
+        }
+      }).load();
+
+      if (me.storiesLoaded && me.featuresLoaded && me.initiativesLoaded) {
+        me.fireEvent('load', me);
+      }
+    },
+
+    _storiesLoaded: function (store, recs, success) {
+      var me = this;
+      me.stories = {};
+
+      Ext.Array.each(recs, function(elt) {
+        me.stories[parseInt(elt.get('ObjectID') + '', 10)] = elt;
+      });
+      me.storiesLoaded = true;
+
+      if (me.storiesLoaded && me.featuresLoaded && me.initiativesLoaded) {
+        me.fireEvent('load', me);
+      }
+    },
+
+    _initiativesLoaded: function (store, recs, success) {
+      var me = this;
+      me.initiatives = {};
+
+      Ext.Array.each(recs, function(elt) {
+        me.initiatives[parseInt(elt.get('ObjectID') + '', 10)] = elt;
+      });
+      me.initiativesLoaded = true;
+
+      if (me.storiesLoaded && me.featuresLoaded && me.initiativesLoaded) {
+        me.fireEvent('load', me);
+      }
+    },
+
+    _onLoad: function (me) {
+      console.log(me);
+    }
+});
+
+Ext.define('BaseCard', {
+  extend: 'Ext.Container',
+
+  config: {
+    cardsPerColumn: 1
+  },
+
+  record: null,
+
+  constructor: function (config) {
+  }
+});
+
+            
+            Rally.launchApp('CustomApp', {
+                name:"FeatureMap",
+                parentRepos:""
+            });
+
+        });
+    </script>
+
+
+
+
+    <style type="text/css">
+.app {
+     /* Add app styles here */
+}
+
+    </style>
+
+</head>
+<body></body>
+</html>
