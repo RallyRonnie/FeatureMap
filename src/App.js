@@ -1,7 +1,8 @@
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     mixins: {
-        observable: 'Ext.util.Observable'
+        observable: 'Ext.util.Observable',
+        maskable: 'Rally.ui.mask.Maskable'
     },
 
     scopeType: 'release',
@@ -14,6 +15,7 @@ Ext.define('CustomApp', {
     constructor: function (config) {
       this.callParent([config]);
       this.mixins.observable.constructor.call(this, config);
+      //this.mixins.maskable.constructor.call(this, {maskMsg: 'Loading...'});
 
       this.addEvents('load');
     },
@@ -22,6 +24,8 @@ Ext.define('CustomApp', {
       var me = this;
       var tb = this.getContext().getTimeboxScope();
       console.dir(this.getContext());
+
+      this.showMask();
 
       me.on('load', function () {
         console.log('loaded');
@@ -59,6 +63,36 @@ Ext.define('CustomApp', {
           scope: me
         }
       }).load();
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        model: 'Project',
+        fetch: true,
+        listeners: {
+          load: me._projectsLoaded,
+          scope: me
+        }
+      }).load();
+    },
+
+    _projectsLoaded: function (store, recs, success) {
+      var me = this;
+      //var pis = {};
+
+      //Ext.Array.each([__PROJECT_OIDS_IN_SCOPE__], function (elt) {
+        //pis[elt] = 1;
+      //});
+
+      me.projects = {};
+
+      Ext.Array.each(recs, function (elt) {
+        //if ((elt.get('Children').length === 0) && (pis.hasOwnProperty(elt.get('ObjectID')))) {
+        me.projects[elt.get('ObjectID')] = elt;
+        //}
+      });
+
+      if (me.stories && me.features && me.initiatives && me.projects) {
+        me.fireEvent('load', me);
+      }
     },
 
     _featuresLoaded: function (store, recs, success) {
@@ -89,7 +123,7 @@ Ext.define('CustomApp', {
         }
       }).load();
 
-      if (me.stories && me.features && me.initiatives) {
+      if (me.stories && me.features && me.initiatives && me.projects) {
         me.fireEvent('load', me);
       }
     },
@@ -102,7 +136,7 @@ Ext.define('CustomApp', {
         me.stories[parseInt(elt.get('ObjectID') + '', 10)] = elt;
       });
 
-      if (me.stories && me.features && me.initiatives) {
+      if (me.stories && me.features && me.initiatives && me.projects) {
         me.fireEvent('load', me);
       }
     },
@@ -115,12 +149,13 @@ Ext.define('CustomApp', {
         me.initiatives[parseInt(elt.get('ObjectID') + '', 10)] = elt;
       });
 
-      if (me.stories && me.features && me.initiatives) {
+      if (me.stories && me.features && me.initiatives && me.projects) {
         me.fireEvent('load', me);
       }
     },
 
     _onLoad: function (me) {
+      me.hideMask();
       console.log(me);
     }
 });
