@@ -1,4 +1,4 @@
-window.console = window.console || {log: function () {}, dir: function () {}};
+window.console = window.console || { log: function () {}, dir: function () {} };
 
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
@@ -295,6 +295,8 @@ Ext.define('CustomApp', {
       var i       = 0;
       var spc     = 5; //me.getSettings('storiesPerColumn');
       var bgColor = me.initiatives[initiativeId].get('DisplayColor');
+      var storyContainer;
+      var storyColumnContainer;
 
       console.log('Color', bgColor);
 
@@ -315,10 +317,53 @@ Ext.define('CustomApp', {
         }]
       });
 
+      storyContainer = Ext.create('Ext.container.Container', {
+        layout: {
+          type: 'hbox'
+        }
+      });
+
+      container.add(storyContainer);
+
+      Ext.Object.each(me.storyByProject[projectId], function (storyId) {
+        if (i === 0) {
+          storyColumnContainer = Ext.create('Ext.container.Container', {
+            layout: {
+              type: 'vbox'
+            }
+          });
+
+          storyContainer.add(storyColumnContainer);
+        }
+
+        storyColumnContainer.add(me.addStory(projectId, featureId, storyId));
+      });
+
       return container;
     },
 
-    addStory: function (featureId, storyId) {
+    addStory: function (projectId, featureId, storyId) {
+      var me = this;
+
+      var container = Ext.create('Ext.container.Container', {
+        layout: {
+          type: 'hbox'
+        },
+        style: {
+            border: '1px solid black',
+        },
+        items: [{
+          xtype: 'box',
+          //cls: 'rotate',
+          style: {
+            'margin-bottom': '20px',
+            'margin-right': '20px'
+          },
+          html: me.stories[storyId].get('Name')
+        }]
+      });
+
+      return container;
     }
 
 });
