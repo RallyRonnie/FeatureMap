@@ -36,6 +36,14 @@ Ext.define('CustomApp', {
       type: 'vbox'
     },
 
+    getSettingsFields: function () {
+      return [{
+        name: 'storyCardsPerColumn',
+        label: 'Number of Story Cards per Column',
+        xtype: 'rallynumberfield'
+      }];
+    },
+
     constructor: function (config) {
       this.callParent([config]);
       this.mixins.observable.constructor.call(this, config);
