@@ -326,6 +326,10 @@ Ext.define('CustomApp', {
       container.add(storyContainer);
 
       Ext.Object.each(me.storyByProject[projectId], function (storyId) {
+        if (i > spc) {
+          i = 0;
+        }
+
         if (i === 0) {
           storyColumnContainer = Ext.create('Ext.container.Container', {
             layout: {
@@ -337,6 +341,7 @@ Ext.define('CustomApp', {
         }
 
         storyColumnContainer.add(me.addStory(projectId, featureId, storyId));
+        i++;
       });
 
       return container;
