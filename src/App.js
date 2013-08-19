@@ -9,12 +9,13 @@ Ext.define('CustomApp', {
 
     scopeType: 'release',
     componentCls: 'app',
+    settingsScope: 'workspace',
 
-    //config: {
-      //defaultSettings: {
-        //storyCardsPerColumn: 5
-      //}
-    //},
+    config: {
+      defaultSettings: {
+        storyCardsPerColumn: 5
+      }
+    },
 
     stories: null,
     features: null,
@@ -293,12 +294,13 @@ Ext.define('CustomApp', {
     addFeature: function (projectId, initiativeId, featureId) {
       var me      = this;
       var i       = 0;
-      var spc     = 5; //me.getSettings('storiesPerColumn');
+      var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);
       var bgColor = me.initiatives[initiativeId].get('DisplayColor');
       var storyContainer;
       var storyColumnContainer;
 
       console.log('Color', bgColor);
+      console.log(me.getSetting('storyCardsPerColumn'));
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -326,7 +328,7 @@ Ext.define('CustomApp', {
       container.add(storyContainer);
 
       Ext.Object.each(me.storyByProject[projectId], function (storyId) {
-        if (i > spc) {
+        if (i >= spc) {
           i = 0;
         }
 
