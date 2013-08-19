@@ -180,8 +180,15 @@ Ext.define('CustomApp', {
       var projectByFeature    = {};
       var projectByInitiative = {};
 
-      Ext.Array.each(stories, function (story) {
+      Ext.Object.each(stories, function (oid, story) {
+        var featureOid    = Rally.util.Ref.getOidByRef(story.get('Feature')._ref);
+        var initiativeOid = Rally.util.Ref.getOidByRef(features[featureOid].get('Parent')._ref);
+        var projectOid    = Rally.util.Ref.getOidByRef(story.get('Project')._ref);
 
+        projectByStory[oid] = projectOid;
+        projectByFeature[featureOid] = projectOid;
+        projectByInitiative[initiativeOid] = projectOid;
       });
+
     }
 });
