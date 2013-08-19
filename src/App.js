@@ -1,3 +1,5 @@
+window.console = window.console || {log: function () {}, dir: function () {}};
+
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     mixins: {
@@ -102,19 +104,11 @@ Ext.define('CustomApp', {
     },
 
     _projectsLoaded: function (store, recs, success) {
-      var me = this;
-      //var pis = {};
-
-      //Ext.Array.each([__PROJECT_OIDS_IN_SCOPE__], function (elt) {
-        //pis[elt] = 1;
-      //});
-
+      var me      = this;
       me.projects = {};
 
       Ext.Array.each(recs, function (elt) {
-        //if ((elt.get('Children').length === 0) && (pis.hasOwnProperty(elt.get('ObjectID')))) {
-        me.projects[elt.get('ObjectID')] = elt;
-        //}
+        me.projects[parseInt(elt.get('ObjectID') + '', 10)] = elt;
       });
 
       if (me.stories && me.features && me.initiatives && me.projects) {
@@ -201,6 +195,11 @@ Ext.define('CustomApp', {
         var initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
 
+        oid           = parseInt(oid + '', 10);
+        featureOid    = parseInt(featureOid + '', 10);
+        initiativeOid = parseInt(initiativeOid + '', 10);
+        projectOid    = parseInt(projectOid + '', 10);
+
         me.projectByStory[oid]                = projectOid;
         me.projectByFeature[featureOid]       = projectOid;
         me.projectByInitiative[initiativeOid] = projectOid;
@@ -227,11 +226,16 @@ Ext.define('CustomApp', {
         layout: {
           type: 'hbox'
         },
+        style: {
+            border: '1px solid green',
+        },
         items: [{
           xtype: 'box',
           //cls: 'rotate',
-          //width: '48px',
-          //height: '200px',
+          style: {
+            'margin-bottom': '20px',
+            'margin-right': '20px'
+          },
           html: me.projects[projectId].get('Name')
         }]
       });
@@ -251,17 +255,35 @@ Ext.define('CustomApp', {
         layout: {
           type: 'vbox'
         },
+        style: {
+            border: '1px solid red'
+        },
         items: [{
           xtype: 'box',
+          style: {
+            'margin-right': '20px'
+          },
           html: me.initiatives[initiativeId].get('Name')
         }]
       });
 
+      var featureContainer = Ext.create('Ext.container.Container', {
+        layout: {
+          type: 'hbox'
+        }
+      });
+
+      container.add(featureContainer);
+
       Ext.Object.each(me.featureByProject[projectId], function (featureId) {
-        iid = Rally.util.Ref.getOidFromRef(me.features[featureId].get('Parent')._ref);
+        if (!me.features[featureId].get('Parent')) {
+          return;
+        }
+
+        iid = Rally.util.Ref.getOidFromRef(me.features[featureId].get('Parent')._ref) + '';
 
         if (initiativeId === iid) {
-          container.add(me.addFeature(projectId, initiativeId, featureId));
+          featureContainer.add(me.addFeature(projectId, initiativeId, featureId));
         }
       });
 
@@ -274,13 +296,21 @@ Ext.define('CustomApp', {
       var spc     = 5; //me.getSettings('storiesPerColumn');
       var bgColor = me.initiatives[initiativeId].get('DisplayColor');
 
+      console.log('Color', bgColor);
+
       var container = Ext.create('Ext.container.Container', {
         layout: {
           type: 'vbox'
         },
+        style: {
+            border: '1px solid blue'
+        },
         items: [{
           xtype: 'box',
-          style: 'background-color: #' + bgColor,
+          style: {
+            'background-color': '#' + bgColor,
+            'margin-right': '20px'
+          },
           html: me.features[featureId].get('Name')
         }]
       });
