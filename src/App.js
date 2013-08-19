@@ -22,11 +22,10 @@ Ext.define('CustomApp', {
 
     addContent: function(tb) {
       var me = this;
-      console.dir(this.getContext());
 
-      me.on('load', function () {
+      me.on('load', function (projects, initiatives, features, stories) {
         console.log('loaded');
-        me._onLoad(me);
+        me._onLoad(projects, initiatives, features, stories);
       });
 
       me.onScopeChange(tb);
@@ -107,16 +106,16 @@ Ext.define('CustomApp', {
       });
 
       if (me.stories && me.features && me.initiatives && me.projects) {
-        me.fireEvent('load', me);
+        me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
       }
     },
 
     _featuresLoaded: function (store, recs, success) {
       var initiatives = {};
-      var query = [];
-      var me = this;
+      var query       = [];
+      var me          = this;
 
-      me.features = {};
+      me.features     = {};
 
       Ext.Array.each(recs, function(elt) {
         if (elt.get('Parent')) {
@@ -140,25 +139,26 @@ Ext.define('CustomApp', {
       }).load();
 
       if (me.stories && me.features && me.initiatives && me.projects) {
-        me.fireEvent('load', me);
+        me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
       }
     },
 
     _storiesLoaded: function (store, recs, success) {
-      var me = this;
+      var me     = this;
       me.stories = {};
 
       Ext.Array.each(recs, function(elt) {
         me.stories[parseInt(elt.get('ObjectID') + '', 10)] = elt;
+
       });
 
       if (me.stories && me.features && me.initiatives && me.projects) {
-        me.fireEvent('load', me);
+        me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
       }
     },
 
     _initiativesLoaded: function (store, recs, success) {
-      var me = this;
+      var me         = this;
       me.initiatives = {};
 
       Ext.Array.each(recs, function(elt) {
@@ -166,12 +166,22 @@ Ext.define('CustomApp', {
       });
 
       if (me.stories && me.features && me.initiatives && me.projects) {
-        me.fireEvent('load', me);
+        me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
       }
     },
 
-    _onLoad: function (me) {
+    _onLoad: function (projects, initiatives, features, stories) {
+      var me = this;
+
       me.hideMask();
       console.log(me);
+
+      var projectByStory      = {};
+      var projectByFeature    = {};
+      var projectByInitiative = {};
+
+      Ext.Array.each(stories, function (story) {
+
+      });
     }
 });
