@@ -153,9 +153,10 @@ Ext.define('CustomApp', {
     },
 
     _featuresLoaded: function (store, recs, success) {
+      var me          = this;
       var initiatives = {};
       var query       = [];
-      var me          = this;
+      var filter      = "";
 
       me.features     = {};
 
@@ -175,9 +176,15 @@ Ext.define('CustomApp', {
         query.push({property: 'ObjectID', operator: '=', value: key});
       });
 
+      if (query.length > 0) {
+        filter = Rally.data.QueryFilter.or(query);
+      } else {
+        console.log("No initiatives found", query);
+      }
+
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Initiative',
-        filters: Rally.data.QueryFilter.or(query),
+        filters: filter,
         fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
         listeners: {
           load: me._initiativesLoaded,
