@@ -99,16 +99,22 @@ Ext.define('CustomApp', {
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Feature',
+        autoLoad: true,
         fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal'],
         filters: tb.getQueryFilter(),
+        sorters: [{
+          property: 'Rank',
+          direction: 'ASC'
+        }],
         listeners: {
           load: me._featuresLoaded,
           scope: me
         }
-      }).load();
+      });
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'HierarchicalRequirement',
+        autoLoad: true,
         fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason'],
         filters: [{
           property: 'Feature.Release.Name',
@@ -123,25 +129,32 @@ Ext.define('CustomApp', {
           property: 'DirectChildrenCount',
           value: 0
         }],
+        sorters: [{
+          property: 'Rank',
+          direction: 'ASC'
+        }],
         listeners: {
           load: me._storiesLoaded,
           scope: me
         }
-      }).load();
+      });
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'Project',
+        autoLoad: true,
         fetch: true,
         listeners: {
           load: me._projectsLoaded,
           scope: me
         }
-      }).load();
+      });
     },
 
     _projectsLoaded: function (store, recs, success) {
-      var me      = this;
-      me.projects = {};
+      var me         = this;
+
+      me.projects    = {};
+      me.projectRecs = recs;
 
       Ext.Array.each(recs, function (elt) {
         me.projects[parseInt(elt.get('ObjectID') + '', 10)] = elt;
@@ -159,6 +172,7 @@ Ext.define('CustomApp', {
       var filter      = "";
 
       me.features     = {};
+      me.featureRecs  = recs;
 
       Ext.Array.each(recs, function(elt) {
         if (!elt) {
@@ -184,13 +198,18 @@ Ext.define('CustomApp', {
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Initiative',
+        autoLoad: true,
         filters: filter,
         fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
+        sorters: [{
+          property: 'Rank',
+          direction: 'ASC'
+        }],
         listeners: {
           load: me._initiativesLoaded,
           scope: me
         }
-      }).load();
+      });
 
       if (me.stories && me.features && me.initiatives && me.projects) {
         me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
@@ -198,8 +217,10 @@ Ext.define('CustomApp', {
     },
 
     _storiesLoaded: function (store, recs, success) {
-      var me     = this;
-      me.stories = {};
+      var me       = this;
+
+      me.stories   = {};
+      me.storyRecs = recs;
 
       Ext.Array.each(recs, function(elt) {
         me.stories[parseInt(elt.get('ObjectID') + '', 10)] = elt;
@@ -212,8 +233,10 @@ Ext.define('CustomApp', {
     },
 
     _initiativesLoaded: function (store, recs, success) {
-      var me         = this;
-      me.initiatives = {};
+      var me            = this;
+
+      me.initiatives    = {};
+      me.initiativeRecs = recs;
 
       Ext.Array.each(recs, function(elt) {
         me.initiatives[parseInt(elt.get('ObjectID') + '', 10)] = elt;
@@ -230,9 +253,9 @@ Ext.define('CustomApp', {
       me.hideMask();
       console.log(me);
 
-      me.projectByStory      = {};
-      me.projectByFeature    = {};
-      me.projectByInitiative = {};
+      me.projectsByStory      = {};
+      me.projectsByFeature    = {};
+      me.projectsByInitiative = {};
 
       me.storyByProject      = {};
       me.featureByProject    = {};
@@ -262,9 +285,13 @@ Ext.define('CustomApp', {
         initiativeOid = parseInt(initiativeOid + '', 10);
         projectOid    = parseInt(projectOid + '', 10);
 
-        me.projectByStory[oid]                = projectOid;
-        me.projectByFeature[featureOid]       = projectOid;
-        me.projectByInitiative[initiativeOid] = projectOid;
+        me.projectsByStory[oid]                = me.projectsByStory[oid] || {};
+        me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
+        me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
+
+        me.projectsByStory[oid][projectOid]                = 1;
+        me.projectsByFeature[featureOid][projectOid]       = 1;
+        me.projectsByInitiative[initiativeOid][projectOid] = 1;
 
         me.storyByProject[projectOid]      = me.storyByProject[projectOid] || {};
         me.featureByProject[projectOid]    = me.featureByProject[projectOid] || {};
@@ -306,8 +333,12 @@ Ext.define('CustomApp', {
         }]
       });
 
-      Ext.Object.each(me.initiativeByProject[projectId], function (initiativeId) {
-        container.add(me.addInitiative(projectId, initiativeId));
+      Ext.Array.each(me.initiativeRecs, function (initiative) {
+        var initiativeId = initiative.data.ObjectID + '';
+
+        if (me.projectsByInitiative[initiativeId][projectId]) {
+          container.add(me.addInitiative(projectId, initiativeId));
+        }
       });
 
       return container;
@@ -343,7 +374,13 @@ Ext.define('CustomApp', {
 
       container.add(featureContainer);
 
-      Ext.Object.each(me.featureByProject[projectId], function (featureId) {
+      Ext.Array.each(me.featureRecs, function (feature) {
+        var featureId = feature.data.ObjectID;
+
+        if (!me.projectsByFeature[featureId][projectId]) {
+          return;
+        }
+
         if (!me.features[featureId].get('Parent')) {
           return;
         }
@@ -392,8 +429,13 @@ Ext.define('CustomApp', {
 
       container.add(storyContainer);
 
-      Ext.Object.each(me.storyByProject[projectId], function (storyId) {
-        var parentId = Rally.util.Ref.getOidFromRef(me.stories[storyId].get('Feature')._ref);
+      Ext.Array.each(me.storyRecs, function (story) {
+        var storyId = story.data.ObjectID;
+        var parentId = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
+
+        if (!me.projectsByStory[storyId][projectId]) {
+          return;
+        }
 
         if (parseInt(featureId + '', 10) !== parseInt(parentId + '', 10)) {
           return;
