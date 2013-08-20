@@ -37,15 +37,12 @@ Ext.define('CustomApp', {
       this.cardTemplate = new Ext.XTemplate(
         '<tpl if="color != null">',
           '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
-            '<p class="name">{name}</p>',
-            '<tpl if="size"><p class="size">{size} SP</p></tpl>',
-          '</div>',
         '<tpl else>',
           '<div class="card {type} state-{state}">',
-            '<p class="name">{name}</p>',
-            '<tpl if="size"><p class="size">{size} SP</p></tpl>',
-          '</div>',
-        '</tpl>'
+        '</tpl>',
+          '<p class="name">{name}</p>',
+          '<tpl if="size"><p class="size">{size} SP</p></tpl>',
+        '</div>'
       );
     },
 
@@ -253,19 +250,13 @@ Ext.define('CustomApp', {
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
-          type: 'hbox'
+          type: 'hbox',
+          align: 'stretchmax'
         },
-        //style: {
-            //border: '1px solid green',
-        //},
         items: [{
           xtype: 'box',
-          //cls: 'rotate',
-          style: {
-            'margin-bottom': '20px',
-            'margin-right': '20px'
-          },
-          html: me.projects[projectId].get('Name')
+          cls: 'rotate-parent',
+          html: '<div class="rotate">' + me.projects[projectId].get('Name') + '</div>'
         }]
       });
 
@@ -353,6 +344,12 @@ Ext.define('CustomApp', {
       container.add(storyContainer);
 
       Ext.Object.each(me.storyByProject[projectId], function (storyId) {
+        var parentId = Rally.util.Ref.getOidFromRef(me.stories[storyId].get('Feature')._ref);
+
+        if (parseInt(featureId + '', 10) !== parseInt(parentId + '', 10)) {
+          return;
+        }
+
         if (i >= spc) {
           i = 0;
         }
