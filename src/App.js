@@ -271,7 +271,7 @@ Ext.define('CustomApp', {
       me.add({
         xtype: 'box',
         html: me.headerTemplate.apply({
-          name: 'Release Name Placeholder',
+          name: this.getContext().getTimeboxScope().getRecord().get('Name'),
           accepted: me.totalAcceptedPoints,
           completed: me.totalCompletedPoints,
           total: me.totalPoints
@@ -416,10 +416,11 @@ Ext.define('CustomApp', {
     addStory: function (storyId) {
       var me   = this;
       var data = {
-        name:        me.stories[storyId].get('Name'),
-        size:        me.stories[storyId].get('PlanEstimate'),
-        state:       ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
-        type:        'story',
+        name:    me.stories[storyId].get('Name'),
+        size:    me.stories[storyId].get('PlanEstimate'),
+        state:   ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
+        type:    'story',
+        blocked: me.stories[storyId].get('Blocked') ? 'blocked' :'',
 
         fidLink: me.fidTemplate.getLink({record: me.stories[storyId].data, text: me.stories[storyId].get('FormattedID'), showHover: false})
       };

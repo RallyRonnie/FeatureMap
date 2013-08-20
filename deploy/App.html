@@ -53,7 +53,7 @@ Ext.define('CustomApp', {
         '<tpl if="color != null">',
           '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
         '<tpl else>',
-          '<div class="card {type} state-{state}">',
+          '<div class="card {type} state-{state} {blocked}">',
         '</tpl>',
           '<p class="name">{fidLink} {name}</p>',
           '<tpl if="size"><p class="size">{size} SP</p></tpl>',
@@ -282,7 +282,7 @@ Ext.define('CustomApp', {
       me.add({
         xtype: 'box',
         html: me.headerTemplate.apply({
-          name: 'Release Name Placeholder',
+          name: this.getContext().getTimeboxScope().getRecord().get('Name'),
           accepted: me.totalAcceptedPoints,
           completed: me.totalCompletedPoints,
           total: me.totalPoints
@@ -427,10 +427,11 @@ Ext.define('CustomApp', {
     addStory: function (storyId) {
       var me   = this;
       var data = {
-        name:        me.stories[storyId].get('Name'),
-        size:        me.stories[storyId].get('PlanEstimate'),
-        state:       ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
-        type:        'story',
+        name:    me.stories[storyId].get('Name'),
+        size:    me.stories[storyId].get('PlanEstimate'),
+        state:   ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
+        type:    'story',
+        blocked: me.stories[storyId].get('Blocked') ? 'blocked' :'',
 
         fidLink: me.fidTemplate.getLink({record: me.stories[storyId].data, text: me.stories[storyId].get('FormattedID'), showHover: false})
       };
@@ -441,16 +442,8 @@ Ext.define('CustomApp', {
         layout: {
           type: 'hbox'
         },
-        //style: {
-            //border: '1px solid black',
-        //},
         items: [{
           xtype: 'box',
-          //cls: 'rotate',
-          //style: {
-            //'margin-bottom': '20px',
-            //'margin-right': '20px'
-          //},
           html: me.cardTemplate.apply(data)
         }]
       });
@@ -543,6 +536,10 @@ Ext.define('CustomApp', {
 
 .story.state-accepted {
   background-color: #F0F7FD !important;
+}
+
+.story.blocked {
+  border: solid 2px red;
 }
 
 .header {
