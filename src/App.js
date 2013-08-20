@@ -24,8 +24,11 @@ Ext.define('CustomApp', {
 
 
     layout: {
-      type: 'vbox'
+      type: 'vbox',
+      align: 'stretch'
     },
+
+    width: '98%',
 
     constructor: function (config) {
       this.callParent([config]);
@@ -34,14 +37,25 @@ Ext.define('CustomApp', {
 
       this.addEvents('load');
 
+      this.fidTemplate = Rally.nav.DetailLink;
       this.cardTemplate = new Ext.XTemplate(
         '<tpl if="color != null">',
           '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
         '<tpl else>',
-          '<div class="card {type} state-{state}">',
+          '<div class="card {type} state-{state} {blocked}">',
         '</tpl>',
-          '<p class="name">{name}</p>',
+          '<p class="name">{fidLink} {name}</p>',
           '<tpl if="size"><p class="size">{size} SP</p></tpl>',
+        '</div>'
+      );
+      this.headerTemplate = new Ext.XTemplate(
+        '<div class="header">',
+          '<div class="name"><h1>{name} - FEATURE BACKLOG</h1></div>',
+          '<div class="info">',
+            '{accepted} of {total} Story Points are done. ',
+            '{[ values.completed - values.accepted ]} are awaiting approval. ',
+            '{[ values.total - values.accepted ]} remaining',
+          '</div>',
         '</div>'
       );
     },
@@ -50,10 +64,6 @@ Ext.define('CustomApp', {
       return [{
         name: 'storyCardsPerColumn',
         label: 'Story Cards per Column',
-        xtype: 'rallynumberfield'
-      }, {
-        name: 'storyCardWidth',
-        label: 'Width of each Story Card',
         xtype: 'rallynumberfield'
       }];
     },
@@ -150,9 +160,14 @@ Ext.define('CustomApp', {
       me.features     = {};
 
       Ext.Array.each(recs, function(elt) {
-        if (elt.get('Parent')) {
+        if (!elt) {
+          return;
+        }
+
+        if (elt.get('Parent') && elt.get('Parent')._ref) {
           initiatives[Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref)] = 1;
         }
+
         me.features[parseInt(elt.get('ObjectID') + '', 10)] = elt;
       });
 
@@ -216,10 +231,24 @@ Ext.define('CustomApp', {
       me.featureByProject    = {};
       me.initiativeByProject = {};
 
+      me.totalPoints = 0;
+      me.totalCompletedPoints = 0;
+      me.totalAcceptedPoints = 0;
+
       Ext.Object.each(stories, function (oid, story) {
         var featureOid    = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
         var initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
+
+        if (story.get('PlanEstimate')) {
+          me.totalPoints = me.totalPoints + parseInt(story.get('PlanEstimate') + '', 10);
+        }
+        if (story.get('ScheduleState') === 'Accepted') {
+          me.totalAcceptedPoints = me.totalAcceptedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+          me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+        } else if (story.get('ScheduleState') === 'Completed') {
+          me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+        }
 
         oid           = parseInt(oid + '', 10);
         featureOid    = parseInt(featureOid + '', 10);
@@ -237,6 +266,16 @@ Ext.define('CustomApp', {
         me.storyByProject[projectOid][oid]                = 1;
         me.featureByProject[projectOid][featureOid]       = 1;
         me.initiativeByProject[projectOid][initiativeOid] = 1;
+      });
+
+      me.add({
+        xtype: 'box',
+        html: me.headerTemplate.apply({
+          name: 'Release Name Placeholder',
+          accepted: me.totalAcceptedPoints,
+          completed: me.totalCompletedPoints,
+          total: me.totalPoints
+        })
       });
 
       Ext.Object.each(me.storyByProject, function (projectId, stories) {
@@ -273,9 +312,10 @@ Ext.define('CustomApp', {
       var iid;
 
       console.log('Initiative', initiativeId, me.initiatives[initiativeId]);
-      data.type = 'initiative';
-      data.name = me.initiatives[initiativeId].get('Name');
-      //data.size = me.initiatives[initiativeId].get('PreliminaryEstimate').Value;
+
+      data.type    = 'initiative';
+      data.name    = me.initiatives[initiativeId].get('Name');
+      data.fidLink = me.fidTemplate.getLink({record: me.initiatives[initiativeId].data, text: me.initiatives[initiativeId].get('FormattedID'), showHover: false});
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -320,10 +360,11 @@ Ext.define('CustomApp', {
       var storyContainer;
       var storyColumnContainer;
 
-      data.type  = 'feature';
-      data.name  = me.features[featureId].get('Name');
-      data.size  = me.features[featureId].get('LeafStoryPlanEstimateTotal') || me.features[featureId].get('PreliminaryEstimate').Value;
-      data.color = bgColor;
+      data.type    = 'feature';
+      data.name    = me.features[featureId].get('Name');
+      data.size    = me.features[featureId].get('LeafStoryPlanEstimateTotal') || me.features[featureId].get('PreliminaryEstimate').Value;
+      data.color   = bgColor;
+      data.fidLink = me.fidTemplate.getLink({record: me.features[featureId].data, text: me.features[featureId].get('FormattedID'), showHover: false});
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -375,26 +416,22 @@ Ext.define('CustomApp', {
     addStory: function (storyId) {
       var me   = this;
       var data = {
-        name:  me.stories[storyId].get('Name'),
-        size:  me.stories[storyId].get('PlanEstimate'),
-        state: ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
-        type:  'story'
+        name:        me.stories[storyId].get('Name'),
+        size:        me.stories[storyId].get('PlanEstimate'),
+        state:       ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
+        type:        'story',
+
+        fidLink: me.fidTemplate.getLink({record: me.stories[storyId].data, text: me.stories[storyId].get('FormattedID'), showHover: false})
       };
+
+      console.log('Story data', data);
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
           type: 'hbox'
         },
-        //style: {
-            //border: '1px solid black',
-        //},
         items: [{
           xtype: 'box',
-          //cls: 'rotate',
-          //style: {
-            //'margin-bottom': '20px',
-            //'margin-right': '20px'
-          //},
           html: me.cardTemplate.apply(data)
         }]
       });

@@ -37,7 +37,8 @@
   border: none;
   border-bottom: solid 1px 000;
   width: 99%;
-  margin-left: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   margin-bottom: 5px;
   padding-bottom: 5px;
   font-size: 16px;
@@ -67,4 +68,21 @@
 
 .story.state-accepted {
   background-color: #F0F7FD !important;
+}
+
+.story.blocked {
+  border: solid 2px red;
+}
+
+.header {
+  text-align: center;
+  height: auto;
+}
+
+.header h1 {
+  font-size: 18px;
+}
+
+.header .info {
+  font-size: 12px
 }
