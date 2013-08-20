@@ -13,7 +13,8 @@ Ext.define('CustomApp', {
 
     config: {
       defaultSettings: {
-        storyCardsPerColumn: 5
+        storyCardsPerColumn: 5,
+        storyCardWidth: 200
       }
     },
 
@@ -21,16 +22,9 @@ Ext.define('CustomApp', {
     features: null,
     initiatives: null,
 
+
     layout: {
       type: 'vbox'
-    },
-
-    getSettingsFields: function () {
-      return [{
-        name: 'storyCardsPerColumn',
-        label: 'Number of Story Cards per Column',
-        xtype: 'rallynumberfield'
-      }];
     },
 
     constructor: function (config) {
@@ -39,6 +33,32 @@ Ext.define('CustomApp', {
       //this.mixins.maskable.constructor.call(this, {maskMsg: 'Loading...'});
 
       this.addEvents('load');
+
+      this.cardTemplate = new Ext.XTemplate(
+        '<tpl if="color != null">',
+          '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
+            '<p class="name">{name}</p>',
+            '<tpl if="size"><p class="size">{size} SP</p></tpl>',
+          '</div>',
+        '<tpl else>',
+          '<div class="card {type} state-{state}">',
+            '<p class="name">{name}</p>',
+            '<tpl if="size"><p class="size">{size} SP</p></tpl>',
+          '</div>',
+        '</tpl>'
+      );
+    },
+
+    getSettingsFields: function () {
+      return [{
+        name: 'storyCardsPerColumn',
+        label: 'Story Cards per Column',
+        xtype: 'rallynumberfield'
+      }, {
+        name: 'storyCardWidth',
+        label: 'Width of each Story Card',
+        xtype: 'rallynumberfield'
+      }];
     },
 
     addContent: function(tb) {
@@ -72,7 +92,7 @@ Ext.define('CustomApp', {
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Feature',
-        fetch: true,
+        fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal'],
         filters: tb.getQueryFilter(),
         listeners: {
           load: me._featuresLoaded,
@@ -82,7 +102,7 @@ Ext.define('CustomApp', {
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'HierarchicalRequirement',
-        fetch: true,
+        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason'],
         filters: [{
           property: 'Feature.Release.Name',
           value: tb.getRecord().get('Name')
@@ -146,7 +166,7 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'PortfolioItem/Initiative',
         filters: query,
-        fetch: true,
+        fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
         listeners: {
           load: me._initiativesLoaded,
           scope: me
@@ -235,9 +255,9 @@ Ext.define('CustomApp', {
         layout: {
           type: 'hbox'
         },
-        style: {
-            border: '1px solid green',
-        },
+        //style: {
+            //border: '1px solid green',
+        //},
         items: [{
           xtype: 'box',
           //cls: 'rotate',
@@ -258,21 +278,21 @@ Ext.define('CustomApp', {
 
     addInitiative: function (projectId, initiativeId) {
       var me = this;
+      var data = {};
       var iid;
+
+      data.type = 'initiative';
+      data.name = me.initiatives[initiativeId].get('Name');
+      //data.size = me.initiatives[initiativeId].get('PreliminaryEstimate').Value;
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
-          type: 'vbox'
-        },
-        style: {
-            border: '1px solid red'
+          type: 'vbox',
+          align: 'stretch'
         },
         items: [{
           xtype: 'box',
-          style: {
-            'margin-right': '20px'
-          },
-          html: me.initiatives[initiativeId].get('Name')
+          html: me.cardTemplate.apply(data)
         }]
       });
 
@@ -304,26 +324,23 @@ Ext.define('CustomApp', {
       var i       = 0;
       var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);
       var bgColor = me.initiatives[initiativeId].get('DisplayColor');
+      var data    = {};
       var storyContainer;
       var storyColumnContainer;
 
-      console.log('Color', bgColor);
-      console.log(me.getSetting('storyCardsPerColumn'));
+      data.type  = 'feature';
+      data.name  = me.features[featureId].get('Name');
+      data.size  = me.features[featureId].get('LeafStoryPlanEstimateTotal') || me.features[featureId].get('PreliminaryEstimate').Value;
+      data.color = bgColor;
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
-          type: 'vbox'
-        },
-        style: {
-            border: '1px solid blue'
+          type: 'vbox',
+          align: 'stretch'
         },
         items: [{
           xtype: 'box',
-          style: {
-            'background-color': '#' + bgColor,
-            'margin-right': '20px'
-          },
-          html: me.features[featureId].get('Name')
+          html: me.cardTemplate.apply(data)
         }]
       });
 
@@ -350,31 +367,37 @@ Ext.define('CustomApp', {
           storyContainer.add(storyColumnContainer);
         }
 
-        storyColumnContainer.add(me.addStory(projectId, featureId, storyId));
+        storyColumnContainer.add(me.addStory(storyId));
         i++;
       });
 
       return container;
     },
 
-    addStory: function (projectId, featureId, storyId) {
-      var me = this;
+    addStory: function (storyId) {
+      var me   = this;
+      var data = {
+        name:  me.stories[storyId].get('Name'),
+        size:  me.stories[storyId].get('PlanEstimate'),
+        state: ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
+        type:  'story'
+      };
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
           type: 'hbox'
         },
-        style: {
-            border: '1px solid black',
-        },
+        //style: {
+            //border: '1px solid black',
+        //},
         items: [{
           xtype: 'box',
           //cls: 'rotate',
-          style: {
-            'margin-bottom': '20px',
-            'margin-right': '20px'
-          },
-          html: me.stories[storyId].get('Name')
+          //style: {
+            //'margin-bottom': '20px',
+            //'margin-right': '20px'
+          //},
+          html: me.cardTemplate.apply(data)
         }]
       });
 
