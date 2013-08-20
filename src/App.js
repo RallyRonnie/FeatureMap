@@ -53,8 +53,8 @@ Ext.define('CustomApp', {
           '<div class="name"><h1>{name} - FEATURE BACKLOG</h1></div>',
           '<div class="info">',
             '{accepted} of {total} Story Points are done. ',
-            '{[ values.completed - values.accepted ]} are awaiting approval. ',
-            '{[ values.total - values.accepted ]} remaining',
+            '{[ values.completed - values.accepted ]} Story Points are awaiting approval. ',
+            '{[ values.total - values.accepted ]} Story Points remaining.',
           '</div>',
         '</div>'
       );
