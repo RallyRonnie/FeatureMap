@@ -72,7 +72,6 @@ Ext.define('CustomApp', {
 
     layout: {
       type: 'vbox',
-      align: 'stretch'
     },
 
     //height: '98%',
@@ -124,8 +123,24 @@ Ext.define('CustomApp', {
       }];
     },
 
+    addToContainer: function (con) {
+      this.add(con);
+      //this.mainBox.add(con);
+    },
+
     addContent: function(tb) {
       var me = this;
+
+      me.mainBox = Ext.create('Ext.container.Container', {
+        layout: {
+          type: 'vbox',
+          align: 'stretch'
+        },
+        width: '98%',
+        height: '98%'
+      });
+
+      me.add(me.mainBox);
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
@@ -424,7 +439,7 @@ Ext.define('CustomApp', {
         me.initiativeByProject[projectOid][initiativeOid] = 1;
       });
 
-      me.add({
+      me.addToContainer({
         xtype: 'box',
         html: me.headerTemplate.apply({
           name:         this.getContext().getTimeboxScope().getRecord().get('Name'),
@@ -437,7 +452,7 @@ Ext.define('CustomApp', {
 
       Ext.Object.each(me.storyByProject, function (projectId, stories) {
         console.log('Adding project', projectId, me.projects[projectId].get('Name'));
-        me.add(me.addProject(projectId));
+        me.addToContainer(me.addProject(projectId));
       });
     },
 
