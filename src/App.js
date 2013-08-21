@@ -71,7 +71,7 @@ Ext.define('CustomApp', {
 
 
     layout: {
-      type: 'vbox',
+      type: 'vbox'
     },
 
     //height: '98%',
