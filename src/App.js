@@ -50,7 +50,7 @@ Ext.define('CustomApp', {
 
     plugins: [{
       ptype: 'featuremapprinting',
-      pluginId: 'print',
+      pluginId: 'print'
     }],
 
     scopeType: 'release',
