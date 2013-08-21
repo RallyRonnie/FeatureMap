@@ -59,10 +59,10 @@ Ext.define('CustomApp', {
         maskable: 'Rally.ui.mask.Maskable'
     },
 
-    plugins: [{
-      ptype: 'featuremapprinting',
-      pluginId: 'print',
-    }],
+    //plugins: [{
+      //ptype: 'featuremapprinting',
+      //pluginId: 'print',
+    //}],
 
     scopeType: 'release',
     componentCls: 'app',
@@ -112,7 +112,8 @@ Ext.define('CustomApp', {
           '<div class="info">',
             '{accepted} of {total} Story Points are done. ',
             '{[ values.completed - values.accepted ]} Story Points are awaiting approval. ',
-            '{[ values.total - values.accepted ]} Story Points remaining.',
+            '{[ values.total - values.accepted ]} Story Points remaining. ',
+            '<tpl if="notEstimated"><span style="color: red">{notEstimated} Stories are not estimated.</span></tpl>',
           '</div>',
         '</div>'
       );
@@ -367,23 +368,27 @@ Ext.define('CustomApp', {
       me.featureByProject    = {};
       me.initiativeByProject = {};
 
-      me.totalPoints = 0;
-      me.totalCompletedPoints = 0;
-      me.totalAcceptedPoints = 0;
+      me.totalPoints              = 0;
+      me.totalCompletedPoints     = 0;
+      me.totalAcceptedPoints      = 0;
+      me.totalStoriesNotEstimated = 0;
 
       Ext.Object.each(stories, function (oid, story) {
         var featureOid    = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
         var initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
 
-        if (story.get('PlanEstimate')) {
+        if (!isNaN(parseInt(story.get('PlanEstimate') + '', 10))) {
           me.totalPoints = me.totalPoints + parseInt(story.get('PlanEstimate') + '', 10);
-        }
-        if ((story.get('ScheduleState') === 'Accepted') || (story.get('ScheduleState') === 'Released')) {
-          me.totalAcceptedPoints = me.totalAcceptedPoints + parseInt(story.get('PlanEstimate') + '', 10);
-          me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
-        } else if (story.get('ScheduleState') === 'Completed') {
-          me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+
+          if ((story.get('ScheduleState') === 'Accepted') || (story.get('ScheduleState') === 'Released')) {
+            me.totalAcceptedPoints = me.totalAcceptedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+            me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+          } else if (story.get('ScheduleState') === 'Completed') {
+            me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
+          }
+        } else {
+          me.totalStoriesNotEstimated++;
         }
 
         oid           = parseInt(oid + '', 10);
@@ -413,12 +418,12 @@ Ext.define('CustomApp', {
         var projectOid    = Rally.util.Ref.getOidFromRef(feature.get('Project')._ref);
         var initiativeOid = Rally.util.Ref.getOidFromRef(feature.get('Parent')._ref);
 
+        me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
+        me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
+
         if (feature.get('DirectChildrenCount') !== 0) {
           return;
         }
-
-        me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
-        me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
 
         me.projectsByFeature[featureOid][projectOid]       = 1;
         me.projectsByInitiative[initiativeOid][projectOid] = 1;
@@ -433,10 +438,11 @@ Ext.define('CustomApp', {
       me.add({
         xtype: 'box',
         html: me.headerTemplate.apply({
-          name: this.getContext().getTimeboxScope().getRecord().get('Name'),
-          accepted: me.totalAcceptedPoints,
-          completed: me.totalCompletedPoints,
-          total: me.totalPoints
+          name:         this.getContext().getTimeboxScope().getRecord().get('Name'),
+          accepted:     me.totalAcceptedPoints,
+          completed:    me.totalCompletedPoints,
+          total:        me.totalPoints,
+          notEstimated: me.totalStoriesNotEstimated
         })
       });
 
