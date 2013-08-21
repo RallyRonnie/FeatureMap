@@ -1,17 +1,25 @@
+html {
+  width: 100%;
+  height: 100%;
+}
+
 .app {
      /* Add app styles here */
 }
 
 .rotate-parent {
   width: 50px;
+  min-height: 250px;
 }
 
 .rotate {
   margin: auto 0;
+  text-align: right;
   width: 300px;
   position: absolute;
-  top: 20px;
-  left: -123px;
+  top: 180px;
+  right: -130px;
+  /*left: -123px;*/
   font-size: 16px;
 
      -moz-transform: rotate(-90.0deg);  /* FF3.5+ */

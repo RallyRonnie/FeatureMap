@@ -1,11 +1,56 @@
 window.console = window.console || { log: function () {}, dir: function () {} };
 
+Ext.define('print.FeatureMap', {
+  requires: ['Ext.XTemplate'],
+  extend: 'Rally.ui.plugin.print.Print',
+  alias: 'plugin.featuremapprinting',
+
+  init: function(component){
+    console.log('Initializing Printing');
+    this.callParent(arguments);
+    this.component = component;
+  },
+
+  _getHtmlContent: function(dom) {
+    var el = Ext.DomHelper.createDom({});
+    var main = Ext.clone(dom.dom);
+    Ext.fly(main).setHeight('100%');
+    Ext.Array.each(Ext.query('div.x-box-inner', main), function (box) {
+      Ext.fly(box).setWidth(parseInt(box.style.width, 10) + 10);
+      Ext.fly(box).setLeft(parseInt(box.style.left, 10) + 15);
+      console.log(box.style.width, typeof box.style.width, parseInt(box.style.width, 10));
+    });
+
+    Ext.Array.each(Ext.query('//link[rel="stylesheet"]', dom), function (link) {
+      console.log("Adding link", link);
+      el.appendChild(link);
+    });
+    el.appendChild(Ext.clone(Ext.query("#appCss")[0]));
+    el.appendChild(main);
+    console.log('Printing', el);
+    return el.innerHTML;
+  },
+
+  getContent: function() {
+    return this._getHtmlContent(this.component.getEl());
+  },
+
+  getHeader: function() {
+    return '';
+  }
+});
+
 Ext.define('CustomApp', {
     extend: 'Rally.app.TimeboxScopedApp',
     mixins: {
         observable: 'Ext.util.Observable',
         maskable: 'Rally.ui.mask.Maskable'
     },
+
+    plugins: [{
+      ptype: 'featuremapprinting',
+      pluginId: 'print',
+    }],
 
     scopeType: 'release',
     componentCls: 'app',
@@ -29,6 +74,7 @@ Ext.define('CustomApp', {
     },
 
     width: '98%',
+    height: '98%',
 
     constructor: function (config) {
       this.callParent([config]);
@@ -68,15 +114,51 @@ Ext.define('CustomApp', {
       }];
     },
 
+    getOptions: function () {
+      return [{
+        text: 'Print',
+        handler: this.openPrintPage,
+        scope: this
+      }];
+    },
+
     addContent: function(tb) {
       var me = this;
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        autoLoad: true,
+        remoteFilter: false,
+        model: 'TypeDefinition',
+        sorters: {
+          property: 'Ordinal',
+          direction: 'Desc'
+        },
+        filters: [{
+          property: 'Parent.Name',
+          operator: '=',
+          value: 'Portfolio Item'
+        }, {
+          property: 'Creatable',
+          operator: '=',
+          value: 'true'
+        }],
+        listeners: {
+          load: function (store, recs) {
+            me.piTypes = {};
+
+            Ext.Array.each(recs, function (type) {
+              me.piTypes[type.get('Ordinal')] = type.get('TypePath');
+            });
+            me.onScopeChange(tb);
+          },
+          scope: me
+        }
+      });
 
       me.on('load', function (projects, initiatives, features, stories) {
         console.log('loaded');
         me._onLoad(projects, initiatives, features, stories);
       });
-
-      me.onScopeChange(tb);
     },
 
     onScopeChange: function (tb) {
@@ -98,7 +180,7 @@ Ext.define('CustomApp', {
       me.showMask();
 
       Ext.create('Rally.data.WsapiDataStore', {
-        model: 'PortfolioItem/Feature',
+        model: me.piTypes['0'],
         autoLoad: true,
         fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal'],
         filters: tb.getQueryFilter(),
@@ -171,19 +253,24 @@ Ext.define('CustomApp', {
       var query       = [];
       var filter      = "";
 
-      me.features     = {};
-      me.featureRecs  = recs;
+      me.features             = {};
+      me.featureRecs          = recs;
+      me.featuresByInitiative = {};
 
       Ext.Array.each(recs, function(elt) {
+        var iid = Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref);
+
         if (!elt) {
           return;
         }
 
         if (elt.get('Parent') && elt.get('Parent')._ref) {
-          initiatives[Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref)] = 1;
+          initiatives[iid] = 1;
         }
 
         me.features[parseInt(elt.get('ObjectID') + '', 10)] = elt;
+        me.featuresByInitiative[iid] = me.featuresByInitiative[iid] || {};
+        me.featuresByInitiative[iid][elt.get('ObjectID')] = elt;
       });
 
       Ext.Object.each(initiatives, function(key) {
@@ -197,7 +284,7 @@ Ext.define('CustomApp', {
       }
 
       Ext.create('Rally.data.WsapiDataStore', {
-        model: 'PortfolioItem/Initiative',
+        model: me.piTypes['1'],
         autoLoad: true,
         filters: filter,
         fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
@@ -302,6 +389,28 @@ Ext.define('CustomApp', {
         me.initiativeByProject[projectOid][initiativeOid] = 1;
       });
 
+      Ext.Array.each(me.featureRecs, function (feature) {
+        var featureOid    = feature.get('ObjectID');
+        var projectOid    = Rally.util.Ref.getOidFromRef(feature.get('Project')._ref);
+        var initiativeOid = Rally.util.Ref.getOidFromRef(feature.get('Parent')._ref);
+
+        if (feature.get('DirectChildrenCount') !== 0) {
+          return;
+        }
+
+        me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
+        me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
+
+        me.projectsByFeature[featureOid][projectOid]       = 1;
+        me.projectsByInitiative[initiativeOid][projectOid] = 1;
+
+        me.featureByProject[projectOid]    = me.featureByProject[projectOid] || {};
+        me.initiativeByProject[projectOid] = me.initiativeByProject[projectOid] || {};
+
+        me.featureByProject[projectOid][featureOid]       = 1;
+        me.initiativeByProject[projectOid][initiativeOid] = 1;
+      });
+
       me.add({
         xtype: 'box',
         html: me.headerTemplate.apply({
@@ -320,6 +429,7 @@ Ext.define('CustomApp', {
 
     addProject: function (projectId) {
       var me = this;
+      var cls = Ext.isIE ? '' : 'rotate';
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -328,8 +438,8 @@ Ext.define('CustomApp', {
         },
         items: [{
           xtype: 'box',
-          cls: 'rotate-parent',
-          html: '<div class="rotate">' + me.projects[projectId].get('Name') + '</div>'
+          cls: Ext.isIE ? '' : 'rotate-parent',
+          html: '<div class="' + cls + '">' + me.projects[projectId].get('Name') + '</div>'
         }]
       });
 
@@ -376,6 +486,7 @@ Ext.define('CustomApp', {
 
       Ext.Array.each(me.featureRecs, function (feature) {
         var featureId = feature.data.ObjectID;
+        console.log('Adding Feature', featureId);
 
         if (!me.projectsByFeature[featureId][projectId]) {
           return;
@@ -406,7 +517,10 @@ Ext.define('CustomApp', {
 
       data.type    = 'feature';
       data.name    = me.features[featureId].get('Name');
-      data.size    = me.features[featureId].get('LeafStoryPlanEstimateTotal') || me.features[featureId].get('PreliminaryEstimate').Value;
+      data.size    = me.features[featureId].get('LeafStoryPlanEstimateTotal') || 0;
+      if (me.features[featureId].get('PreliminaryEstimate')) {
+        data.size = data.size || me.features[featureId].get('PreliminaryEstimate').Value;
+      }
       data.color   = bgColor;
       data.fidLink = me.fidTemplate.getLink({record: me.features[featureId].data, text: me.features[featureId].get('FormattedID'), showHover: false});
 
