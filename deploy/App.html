@@ -197,7 +197,7 @@ Ext.define('CustomApp', {
     loadData: function (tb) {
       var me = this;
 
-      me.showMask();
+      me.showMask("Loading data...");
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: me.piTypes['0'],
