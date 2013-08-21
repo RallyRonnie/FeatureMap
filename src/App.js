@@ -48,14 +48,15 @@ Ext.define('CustomApp', {
         maskable: 'Rally.ui.mask.Maskable'
     },
 
-    //plugins: [{
-      //ptype: 'featuremapprinting',
-      //pluginId: 'print',
-    //}],
+    plugins: [{
+      ptype: 'featuremapprinting',
+      pluginId: 'print',
+    }],
 
     scopeType: 'release',
     componentCls: 'app',
     settingsScope: 'workspace',
+    autoScroll: true,
 
     config: {
       defaultSettings: {
