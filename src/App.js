@@ -75,8 +75,7 @@ Ext.define('CustomApp', {
       align: 'stretch'
     },
 
-    width: '98%',
-    height: '98%',
+    //height: '98%',
 
     constructor: function (config) {
       this.callParent([config]);
