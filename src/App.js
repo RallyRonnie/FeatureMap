@@ -1,4 +1,5 @@
 window.console = window.console || { log: function () {}, dir: function () {} };
+var Ext = window.Ext4 || window.Ext;
 
 Ext.define('print.FeatureMap', {
   requires: ['Ext.XTemplate'],
@@ -129,10 +130,10 @@ Ext.define('CustomApp', {
         autoLoad: true,
         remoteFilter: false,
         model: 'TypeDefinition',
-        sorters: {
+        sorters: [{
           property: 'Ordinal',
           direction: 'Desc'
-        },
+        }],
         filters: [{
           property: 'Parent.Name',
           operator: '=',
@@ -147,7 +148,8 @@ Ext.define('CustomApp', {
             me.piTypes = {};
 
             Ext.Array.each(recs, function (type) {
-              me.piTypes[type.get('Ordinal')] = type.get('TypePath');
+              console.log('Found PI Type', type, type.get('Ordinal'), type.get('TypePath'));
+              me.piTypes[type.get('Ordinal') + ''] = type.get('TypePath');
             });
             me.onScopeChange(tb);
           },
@@ -233,6 +235,7 @@ Ext.define('CustomApp', {
     },
 
     _projectsLoaded: function (store, recs, success) {
+      console.log('Projects loaded', recs);
       var me         = this;
 
       me.projects    = {};
@@ -248,6 +251,7 @@ Ext.define('CustomApp', {
     },
 
     _featuresLoaded: function (store, recs, success) {
+      console.log('Features loaded', recs);
       var me          = this;
       var initiatives = {};
       var query       = [];
@@ -304,6 +308,8 @@ Ext.define('CustomApp', {
     },
 
     _storiesLoaded: function (store, recs, success) {
+      console.log('Stories loaded', recs);
+
       var me       = this;
 
       me.stories   = {};
@@ -320,6 +326,7 @@ Ext.define('CustomApp', {
     },
 
     _initiativesLoaded: function (store, recs, success) {
+      console.log('Initiatives loaded', recs);
       var me            = this;
 
       me.initiatives    = {};
@@ -335,6 +342,7 @@ Ext.define('CustomApp', {
     },
 
     _onLoad: function (projects, initiatives, features, stories) {
+      console.log('All data loaded. Time to process it');
       var me = this;
 
       me.hideMask();
@@ -428,6 +436,8 @@ Ext.define('CustomApp', {
     },
 
     addProject: function (projectId) {
+      console.log('Adding project', projectId);
+
       var me = this;
       var cls = Ext.isIE ? '' : 'rotate';
 
@@ -455,6 +465,8 @@ Ext.define('CustomApp', {
     },
 
     addInitiative: function (projectId, initiativeId) {
+      console.log('Adding initiative', initiativeId);
+
       var me = this;
       var data = {};
       var iid;
@@ -486,7 +498,6 @@ Ext.define('CustomApp', {
 
       Ext.Array.each(me.featureRecs, function (feature) {
         var featureId = feature.data.ObjectID;
-        console.log('Adding Feature', featureId);
 
         if (!me.projectsByFeature[featureId][projectId]) {
           return;
@@ -507,6 +518,8 @@ Ext.define('CustomApp', {
     },
 
     addFeature: function (projectId, initiativeId, featureId) {
+      console.log('Adding Feature', featureId);
+
       var me      = this;
       var i       = 0;
       var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);

@@ -3,6 +3,7 @@ module.exports = function(grunt) {
   'use strict';
 
   var config, debug, environment, spec;
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -12,7 +13,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('default', ['clean', 'concat', 'template']);
   grunt.registerTask('test', ['default', 'jasmine']);
-  grunt.registerTask('build', ['concat', 'template:build']);
+  grunt.registerTask('build', ['jshint', 'concat', 'template:build']);
   grunt.registerTask('deploy', ['build', 'rallydeploy:prod']);
 
   spec = grunt.option('spec') || '*';
@@ -23,6 +24,10 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
 
     clean: [ 'gen/**/*' ],
+
+    jshint: {
+      files: ['src/**/*.js']
+    },
 
     concat: {
       src: {
