@@ -360,7 +360,7 @@ Ext.define('CustomApp', {
         if (story.get('PlanEstimate')) {
           me.totalPoints = me.totalPoints + parseInt(story.get('PlanEstimate') + '', 10);
         }
-        if (story.get('ScheduleState') === 'Accepted') {
+        if ((story.get('ScheduleState') === 'Accepted') || (story.get('ScheduleState') === 'Released')) {
           me.totalAcceptedPoints = me.totalAcceptedPoints + parseInt(story.get('PlanEstimate') + '', 10);
           me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
         } else if (story.get('ScheduleState') === 'Completed') {

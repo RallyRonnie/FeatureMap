@@ -371,7 +371,7 @@ Ext.define('CustomApp', {
         if (story.get('PlanEstimate')) {
           me.totalPoints = me.totalPoints + parseInt(story.get('PlanEstimate') + '', 10);
         }
-        if (story.get('ScheduleState') === 'Accepted') {
+        if ((story.get('ScheduleState') === 'Accepted') || (story.get('ScheduleState') === 'Released')) {
           me.totalAcceptedPoints = me.totalAcceptedPoints + parseInt(story.get('PlanEstimate') + '', 10);
           me.totalCompletedPoints = me.totalCompletedPoints + parseInt(story.get('PlanEstimate') + '', 10);
         } else if (story.get('ScheduleState') === 'Completed') {
@@ -692,21 +692,20 @@ html {
   width: 150px;
 }
 
-.story.state-completed {
-  background-color: #dff0d8 !important;
 
+.story.state-defined {
+  background-color: #F5F5F5 !important;
 }
 
 .story.state-in-progress {
   background-color: #FCF8E3 !important;
 }
 
-.story.state-defined {
-  background-color: #F5F5F5 !important;
+.story.state-completed, .story.state-accepted {
+  background-color: #bff0b8 !important;
 }
-
-.story.state-accepted {
-  background-color: #F0F7FD !important;
+.story.state-released {
+  background-color: #D0D7FD !important;
 }
 
 .story.blocked {
