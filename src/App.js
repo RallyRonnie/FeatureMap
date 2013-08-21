@@ -95,7 +95,7 @@ Ext.define('CustomApp', {
         '</div>'
       );
       this.headerTemplate = new Ext.XTemplate(
-        '<div class="header">',
+        '<div class="header" style="width: {width}">',
           '<div class="name"><h1>{name} - FEATURE BACKLOG</h1></div>',
           '<div class="info">',
             '{accepted} of {total} Story Points are done. ',
@@ -125,22 +125,12 @@ Ext.define('CustomApp', {
 
     addToContainer: function (con) {
       this.add(con);
-      //this.mainBox.add(con);
     },
 
     addContent: function(tb) {
       var me = this;
 
-      me.mainBox = Ext.create('Ext.container.Container', {
-        layout: {
-          type: 'vbox',
-          align: 'stretch'
-        },
-        width: '98%',
-        height: '98%'
-      });
-
-      me.add(me.mainBox);
+      console.log('My width', Ext.get(me.getEl()).getWidth());
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
@@ -441,7 +431,9 @@ Ext.define('CustomApp', {
 
       me.addToContainer({
         xtype: 'box',
+        layout: 'fit',
         html: me.headerTemplate.apply({
+          width:        (Ext.get(me.getEl()).getWidth() - 10) + "px",
           name:         this.getContext().getTimeboxScope().getRecord().get('Name'),
           accepted:     me.totalAcceptedPoints,
           completed:    me.totalCompletedPoints,
