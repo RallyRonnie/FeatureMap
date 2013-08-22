@@ -1,4 +1,4 @@
-window.console = window.console || { log: function () {}, dir: function () {} };
+//window.//console = window.//console || { log: function () {}, dir: function () {} };
 var Ext = window.Ext4 || window.Ext;
 
 Ext.define('Rally.print.FeatureMap', {
@@ -7,7 +7,7 @@ Ext.define('Rally.print.FeatureMap', {
   alias: 'plugin.featuremapprinting',
 
   init: function(component){
-    console.log('Initializing Printing');
+    //console.log('Initializing Printing');
     this.callParent(arguments);
     this.component = component;
   },
@@ -19,16 +19,16 @@ Ext.define('Rally.print.FeatureMap', {
     Ext.Array.each(Ext.query('div.x-box-inner', main), function (box) {
       Ext.fly(box).setWidth(parseInt(box.style.width, 10) + 10);
       Ext.fly(box).setLeft(parseInt(box.style.left, 10) + 15);
-      console.log(box.style.width, typeof box.style.width, parseInt(box.style.width, 10));
+      //console.log(box.style.width, typeof box.style.width, parseInt(box.style.width, 10));
     });
 
     Ext.Array.each(Ext.query('//link[rel="stylesheet"]', dom), function (link) {
-      console.log("Adding link", link);
+      //console.log("Adding link", link);
       el.appendChild(link);
     });
     el.appendChild(Ext.clone(Ext.query("#appCss")[0]));
     el.appendChild(main);
-    console.log('Printing', el);
+    //console.log('Printing', el);
     return el.innerHTML;
   },
 
@@ -60,8 +60,7 @@ Ext.define('CustomApp', {
 
     config: {
       defaultSettings: {
-        storyCardsPerColumn: 5,
-        storyCardWidth: 200
+        storyCardsPerColumn: 5
       }
     },
 
@@ -73,8 +72,6 @@ Ext.define('CustomApp', {
     layout: {
       type: 'vbox'
     },
-
-    //height: '98%',
 
     constructor: function (config) {
       this.callParent([config]);
@@ -130,7 +127,7 @@ Ext.define('CustomApp', {
     addContent: function(tb) {
       var me = this;
 
-      console.log('My width', Ext.get(me.getEl()).getWidth());
+      //console.log('My width', Ext.get(me.getEl()).getWidth());
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
@@ -154,7 +151,7 @@ Ext.define('CustomApp', {
             me.piTypes = {};
 
             Ext.Array.each(recs, function (type) {
-              console.log('Found PI Type', type, type.get('Ordinal'), type.get('TypePath'));
+              //console.log('Found PI Type', type, type.get('Ordinal'), type.get('TypePath'));
               me.piTypes[type.get('Ordinal') + ''] = type.get('TypePath');
             });
             me.onScopeChange(tb);
@@ -164,14 +161,14 @@ Ext.define('CustomApp', {
       });
 
       me.on('load', function (projects, initiatives, features, stories) {
-        console.log('loaded');
+        //console.log('loaded');
         me._onLoad(projects, initiatives, features, stories);
       });
     },
 
     onScopeChange: function (tb) {
       var me = this;
-      console.log('Scope changed');
+      //console.log('Scope changed');
 
       me.initiatives = null;
       me.features = null;
@@ -241,7 +238,7 @@ Ext.define('CustomApp', {
     },
 
     _projectsLoaded: function (store, recs, success) {
-      console.log('Projects loaded', recs);
+      //console.log('Projects loaded', recs);
       var me         = this;
 
       me.projects    = {};
@@ -257,7 +254,7 @@ Ext.define('CustomApp', {
     },
 
     _featuresLoaded: function (store, recs, success) {
-      console.log('Features loaded', recs);
+      //console.log('Features loaded', recs);
       var me          = this;
       var initiatives = {};
       var query       = [];
@@ -290,7 +287,7 @@ Ext.define('CustomApp', {
       if (query.length > 0) {
         filter = Rally.data.QueryFilter.or(query);
       } else {
-        console.log("No initiatives found", query);
+        //console.log("No initiatives found", query);
       }
 
       Ext.create('Rally.data.WsapiDataStore', {
@@ -314,7 +311,7 @@ Ext.define('CustomApp', {
     },
 
     _storiesLoaded: function (store, recs, success) {
-      console.log('Stories loaded', recs);
+      //console.log('Stories loaded', recs);
 
       var me       = this;
 
@@ -332,7 +329,7 @@ Ext.define('CustomApp', {
     },
 
     _initiativesLoaded: function (store, recs, success) {
-      console.log('Initiatives loaded', recs);
+      //console.log('Initiatives loaded', recs);
       var me            = this;
 
       me.initiatives    = {};
@@ -348,11 +345,11 @@ Ext.define('CustomApp', {
     },
 
     _onLoad: function (projects, initiatives, features, stories) {
-      console.log('All data loaded. Time to process it');
+      //console.log('All data loaded. Time to process it');
       var me = this;
 
       me.hideMask();
-      console.log(me);
+      //console.log(me);
 
       me.projectsByStory      = {};
       me.projectsByFeature    = {};
@@ -443,13 +440,13 @@ Ext.define('CustomApp', {
       });
 
       Ext.Object.each(me.storyByProject, function (projectId, stories) {
-        console.log('Adding project', projectId, me.projects[projectId].get('Name'));
+        //console.log('Adding project', projectId, me.projects[projectId].get('Name'));
         me.addToContainer(me.addProject(projectId));
       });
     },
 
     addProject: function (projectId) {
-      console.log('Adding project', projectId);
+      //console.log('Adding project', projectId);
 
       var me = this;
       var cls = Ext.isIE ? 'rotate rotate-ie' : 'rotate';
@@ -478,13 +475,13 @@ Ext.define('CustomApp', {
     },
 
     addInitiative: function (projectId, initiativeId) {
-      console.log('Adding initiative', initiativeId);
+      //console.log('Adding initiative', initiativeId);
 
       var me = this;
       var data = {};
       var iid;
 
-      console.log('Initiative', initiativeId, me.initiatives[initiativeId]);
+      //console.log('Initiative', initiativeId, me.initiatives[initiativeId]);
 
       data.type    = 'initiative';
       data.name    = me.initiatives[initiativeId].get('Name');
@@ -531,7 +528,7 @@ Ext.define('CustomApp', {
     },
 
     addFeature: function (projectId, initiativeId, featureId) {
-      console.log('Adding Feature', featureId);
+      //console.log('Adding Feature', featureId);
 
       var me      = this;
       var i       = 0;
@@ -614,7 +611,7 @@ Ext.define('CustomApp', {
         fidLink: me.fidTemplate.getLink({record: me.stories[storyId].data, text: me.stories[storyId].get('FormattedID'), showHover: false})
       };
 
-      console.log('Story data', data);
+      //console.log('Story data', data);
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
