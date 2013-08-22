@@ -1,7 +1,7 @@
 window.console = window.console || { log: function () {}, dir: function () {} };
 var Ext = window.Ext4 || window.Ext;
 
-Ext.define('print.FeatureMap', {
+Ext.define('Rally.print.FeatureMap', {
   requires: ['Ext.XTemplate'],
   extend: 'Rally.ui.plugin.print.Print',
   alias: 'plugin.featuremapprinting',
@@ -185,7 +185,7 @@ Ext.define('CustomApp', {
     loadData: function (tb) {
       var me = this;
 
-      me.showMask("Loading data...");
+      me.showMask("Loading data for " + tb.getRecord().get('Name') + "...");
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: me.piTypes['0'],

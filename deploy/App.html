@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
     <title>FeatureMap</title>
 
-    <script type="text/javascript" src="//rally1.rallydev.com/apps/2.0rc1/sdk.js?wsapiVersion=1.43"></script>
+    <script type="text/javascript"
+src="//rally1.rallydev.com/apps/2.0rc1/sdk.js?wsapiVersion=1.43"></script>
 
 
 
@@ -13,7 +14,7 @@
 window.console = window.console || { log: function () {}, dir: function () {} };
 var Ext = window.Ext4 || window.Ext;
 
-Ext.define('print.FeatureMap', {
+Ext.define('Rally.print.FeatureMap', {
   requires: ['Ext.XTemplate'],
   extend: 'Rally.ui.plugin.print.Print',
   alias: 'plugin.featuremapprinting',
@@ -197,7 +198,7 @@ Ext.define('CustomApp', {
     loadData: function (tb) {
       var me = this;
 
-      me.showMask("Loading data...");
+      me.showMask("Loading data for " + tb.getRecord().get('Name') + "...");
 
       Ext.create('Rally.data.WsapiDataStore', {
         model: me.piTypes['0'],
