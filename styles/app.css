@@ -29,6 +29,12 @@ html {
          -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)"; /* IE8 */
 }
 
+.rotate-ie {
+  right: 0px;
+  left: 15px;
+  top: 50px;
+}
+
 .card {
   text-align: center;
   border: solid 1px #999;

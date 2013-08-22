@@ -452,7 +452,7 @@ Ext.define('CustomApp', {
       console.log('Adding project', projectId);
 
       var me = this;
-      var cls = Ext.isIE ? '' : 'rotate';
+      var cls = Ext.isIE ? 'rotate rotate-ie' : 'rotate';
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -461,7 +461,7 @@ Ext.define('CustomApp', {
         },
         items: [{
           xtype: 'box',
-          cls: Ext.isIE ? '' : 'rotate-parent',
+          cls: Ext.isIE ? 'rotate-parent' : 'rotate-parent',
           html: '<div class="' + cls + '">' + me.projects[projectId].get('Name') + '</div>'
         }]
       });
