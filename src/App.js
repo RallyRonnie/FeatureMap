@@ -513,8 +513,10 @@ Ext.define('CustomApp', {
       Ext.Array.each(me.initiativeRecs, function (initiative) {
         var initiativeId = initiative.data.ObjectID + '';
 
-        if (me.projectsByInitiative[initiativeId][projectId]) {
-          container.add(me.addInitiative(projectId, initiativeId));
+        if (me.projectsByInitiative[initiativeId]) {
+          if (me.projectsByInitiative[initiativeId][projectId]) {
+            container.add(me.addInitiative(projectId, initiativeId));
+          }
         }
       });
 
@@ -555,6 +557,10 @@ Ext.define('CustomApp', {
 
       Ext.Array.each(me.featureRecs, function (feature) {
         var featureId = feature.data.ObjectID;
+
+        if (!me.projectsByFeature[featureId]) {
+          return;
+        }
 
         if (!me.projectsByFeature[featureId][projectId]) {
           return;
@@ -616,6 +622,10 @@ Ext.define('CustomApp', {
       Ext.Array.each(me.storyRecs, function (story) {
         var storyId = story.data.ObjectID;
         var parentId = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
+
+        if (!me.projectsByStory[storyId]) {
+          return;
+        }
 
         if (!me.projectsByStory[storyId][projectId]) {
           return;
