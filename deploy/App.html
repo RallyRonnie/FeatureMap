@@ -75,12 +75,12 @@ Ext.define('CustomApp', {
       defaultSettings: {
         storyCardsPerColumn: 5,
         stateColors: Ext.JSON.encode({
-          backlog: '#F5F5F5',
-          defined: '#F5F5F5',
-          'in-progress': '#FCF8E3',
+          backlog: '#E5E5E5',
+          defined: '#E5E5E5',
+          'in-progress': '#FDEFA7',
           completed: '#BFF0B8',
           accepted: '#BFF0B8',
-          released: '#D0D7FD'
+          released: '#B0C9FF'
         })
       }
     },
@@ -138,7 +138,68 @@ Ext.define('CustomApp', {
         text: 'Print',
         handler: this.openPrintPage,
         scope: this
+      }, {
+        text: 'Show Color Legend',
+        handler: this.showLegend,
+        scope: this
       }];
+    },
+
+    showLegend: function () {
+      var dlgWidth = 200;
+
+      if (!this.legendDlg) {
+        var states = ['Backlog', 'Defined', 'In-Progress', 'Completed', 'Accepted', 'Released'];
+        var stateColors = Ext.JSON.decode(this.getSetting('stateColors'));
+        var legend = [];
+
+        Ext.Array.each(states, function (state) {
+          legend.push({
+            xtype: 'container',
+            layout: {
+              type: 'hbox'
+            },
+            style: {
+              margin: '5px'
+            },
+            items: [{
+              xtype: 'box',
+              width: 16,
+              height: 16,
+              style: {
+                border: 'solid 1px black',
+                backgroundColor: stateColors[state.toLowerCase()],
+                marginRight: '5px'
+              },
+              html: '&nbsp'
+            }, {
+              xtype: 'box',
+              height: 16,
+              style: {
+                verticalAlign: 'middle',
+                display: 'table-cell',
+                paddingTop: '2px'
+              },
+              html: ' ' + state
+            }]
+          });
+        });
+
+        this.legendDlg = Ext.create('Rally.ui.dialog.Dialog', {
+          autoShow: true,
+          draggable: true,
+          width: dlgWidth,
+          height: states.length * 26,
+          title: 'Story Color Legend',
+          closable: true,
+          modal: false,
+          x: Ext.fly(this.getEl()).getWidth() - dlgWidth - 50,
+          y: 20,
+          items: legend
+        });
+      } else {
+        this.legendDlg.show();
+      }
     },
 
     addToContainer: function (con) {
@@ -147,12 +208,6 @@ Ext.define('CustomApp', {
 
     addContent: function(tb) {
       var me = this;
-
-      //console.log('My width', Ext.get(me.getEl()).getWidth());
-      me.on('afterrender', function () {
-        console.log('Rendering');
-
-      });
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
