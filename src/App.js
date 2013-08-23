@@ -65,7 +65,7 @@ Ext.define('CustomApp', {
           backlog: '#E5E5E5',
           defined: '#E5E5E5',
           'in-progress': '#FDEFA7',
-          completed: '#BFF0B8',
+          completed: '#FDEFA7',
           accepted: '#BFF0B8',
           released: '#B0C9FF'
         })
