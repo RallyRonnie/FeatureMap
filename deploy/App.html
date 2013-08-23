@@ -545,6 +545,8 @@ Ext.define('CustomApp', {
 
       //console.log('Initiative', initiativeId, me.initiatives[initiativeId]);
 
+      if (!me.initiatives[initiativeId]) { return; }
+
       data.type    = 'initiative';
       data.name    = me.initiatives[initiativeId].get('Name');
       data.fidLink = me.fidTemplate.getLink({record: me.initiatives[initiativeId].data, text: me.initiatives[initiativeId].get('FormattedID'), showHover: false});
