@@ -69,7 +69,7 @@ html {
   width: 150px;
 }
 
-
+/*
 .story.state-defined {
   background-color: #F5F5F5 !important;
 }
@@ -84,6 +84,7 @@ html {
 .story.state-released {
   background-color: #D0D7FD !important;
 }
+*/
 
 .story.blocked {
   border: solid 2px red;

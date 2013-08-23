@@ -73,7 +73,15 @@ Ext.define('CustomApp', {
 
     config: {
       defaultSettings: {
-        storyCardsPerColumn: 5
+        storyCardsPerColumn: 5,
+        stateColors: Ext.JSON.encode({
+          backlog: '#F5F5F5',
+          defined: '#F5F5F5',
+          'in-progress': '#FCF8E3',
+          completed: '#BFF0B8',
+          accepted: '#BFF0B8',
+          released: '#D0D7FD'
+        })
       }
     },
 
@@ -141,6 +149,10 @@ Ext.define('CustomApp', {
       var me = this;
 
       //console.log('My width', Ext.get(me.getEl()).getWidth());
+      me.on('afterrender', function () {
+        console.log('Rendering');
+
+      });
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
@@ -278,14 +290,17 @@ Ext.define('CustomApp', {
       me.featuresByInitiative = {};
 
       Ext.Array.each(recs, function(elt) {
-        var iid = Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref);
+        var iid;
 
         if (!elt) {
           return;
         }
 
         if (elt.get('Parent') && elt.get('Parent')._ref) {
+          iid = Rally.util.Ref.getOidFromRef(elt.get('Parent')._ref);
           initiatives[iid] = 1;
+        } else {
+          iid = 0;
         }
 
         me.features[parseInt(elt.get('ObjectID') + '', 10)] = elt;
@@ -343,7 +358,8 @@ Ext.define('CustomApp', {
 
     _initiativesLoaded: function (store, recs, success) {
       //console.log('Initiatives loaded', recs);
-      var me            = this;
+      var me = this;
+      var nullInitiative;
 
       me.initiatives    = {};
       me.initiativeRecs = recs;
@@ -352,9 +368,21 @@ Ext.define('CustomApp', {
         me.initiatives[parseInt(elt.get('ObjectID') + '', 10)] = elt;
       });
 
-      if (me.stories && me.features && me.initiatives && me.projects) {
-        me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
-      }
+      Rally.data.ModelFactory.getModel({
+        type: me.piTypes['1'],
+        success: function (model) {
+          var blank = Ext.create(model, {
+            ObjectID: 0,
+            Name: '(No ' + me.piTypes['1'].split('/')[1] + ')'
+          });
+
+          me.initiatives[0] = blank;
+          me.initiativeRecs.push(blank);
+          if (me.stories && me.features && me.initiatives && me.projects) {
+            me.fireEvent('load', me.projects, me.initiatives, me.features, me.stories);
+          }
+        }
+      });
     },
 
     _onLoad: function (projects, initiatives, features, stories) {
@@ -379,8 +407,14 @@ Ext.define('CustomApp', {
 
       Ext.Object.each(stories, function (oid, story) {
         var featureOid    = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
-        var initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
+        var initiativeOid;
+
+        if (features[featureOid].get('Parent')) {
+          initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
+        } else {
+          initiativeOid = 0;
+        }
 
         if (!isNaN(parseInt(story.get('PlanEstimate') + '', 10))) {
           me.totalPoints = me.totalPoints + parseInt(story.get('PlanEstimate') + '', 10);
@@ -420,7 +454,13 @@ Ext.define('CustomApp', {
       Ext.Array.each(me.featureRecs, function (feature) {
         var featureOid    = feature.get('ObjectID');
         var projectOid    = Rally.util.Ref.getOidFromRef(feature.get('Project')._ref);
-        var initiativeOid = Rally.util.Ref.getOidFromRef(feature.get('Parent')._ref);
+        var initiativeOid;
+
+        if (feature.get('Parent')) {
+          initiativeOid = Rally.util.Ref.getOidFromRef(feature.get('Parent')._ref);
+        } else {
+          initiativeOid = 0;
+        }
 
         me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
         me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
@@ -455,6 +495,13 @@ Ext.define('CustomApp', {
       Ext.Object.each(me.storyByProject, function (projectId, stories) {
         //console.log('Adding project', projectId, me.projects[projectId].get('Name'));
         me.addToContainer(me.addProject(projectId));
+      });
+
+      var colors = Ext.JSON.decode(me.getSetting('stateColors'));
+      Ext.Object.each(colors, function (k, v) {
+        Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
+          elt.style.backgroundColor = v;
+        });
       });
     },
 
@@ -526,11 +573,11 @@ Ext.define('CustomApp', {
           return;
         }
 
-        if (!me.features[featureId].get('Parent')) {
-          return;
+        if (me.features[featureId].get('Parent')) {
+          iid = Rally.util.Ref.getOidFromRef(me.features[featureId].get('Parent')._ref) + '';
+        } else {
+          iid = '0';
         }
-
-        iid = Rally.util.Ref.getOidFromRef(me.features[featureId].get('Parent')._ref) + '';
 
         if (initiativeId === iid) {
           featureContainer.add(me.addFeature(projectId, initiativeId, featureId));
@@ -725,7 +772,7 @@ html {
   width: 150px;
 }
 
-
+/*
 .story.state-defined {
   background-color: #F5F5F5 !important;
 }
@@ -740,6 +787,7 @@ html {
 .story.state-released {
   background-color: #D0D7FD !important;
 }
+*/
 
 .story.blocked {
   border: solid 2px red;
