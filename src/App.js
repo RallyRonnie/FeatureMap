@@ -179,6 +179,7 @@ Ext.define('CustomApp', {
           height: states.length * 26,
           title: 'Story Color Legend',
           closable: true,
+          closeAction: 'hide',
           modal: false,
           x: Ext.fly(this.getEl()).getWidth() - dlgWidth - 50,
           y: 20,
