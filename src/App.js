@@ -216,7 +216,7 @@ Ext.define('CustomApp', {
         fetch: ['Attributes', 'ElementName', 'AllowedValues', 'StringValue'],
         listeners: {
           load: function (store, recs) {
-            console.dir(recs);
+            //console.dir(recs);
             Ext.Array.each(recs[0].get('Attributes'), function (attribute) {
               if (attribute.ElementName !== 'ScheduleState') { return; }
 
