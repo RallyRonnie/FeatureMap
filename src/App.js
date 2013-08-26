@@ -143,6 +143,7 @@ Ext.define('CustomApp', {
 
     showLegend: function () {
       var dlgWidth = 200;
+      var me = this;
 
       if (!this.legendDlg) {
         var legend = [];
@@ -162,7 +163,7 @@ Ext.define('CustomApp', {
               height: 16,
               style: {
                 border: 'solid 1px black',
-                backgroundColor: 'state-color-' + state.toLowerCase(),
+                backgroundColor: me.getSetting('state-color-' + state.toLowerCase()),
                 marginRight: '5px'
               },
               html: '&nbsp'
@@ -183,7 +184,7 @@ Ext.define('CustomApp', {
           autoShow: true,
           draggable: true,
           width: dlgWidth,
-          height: states.length * 26,
+          height: me.scheduleStates.length * 27,
           title: 'Story Color Legend',
           closable: true,
           closeAction: 'hide',
