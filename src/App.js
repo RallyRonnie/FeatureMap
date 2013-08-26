@@ -58,24 +58,23 @@ Ext.define('CustomApp', {
     settingsScope: 'workspace',
     autoScroll: true,
 
+    scheduleStates: ['Backlog', 'Defined', 'In-Progress', 'Completed', 'Accepted', 'Released'],
+
     config: {
       defaultSettings: {
         storyCardsPerColumn: 5,
-        stateColors: Ext.JSON.encode({
-          backlog: '#E5E5E5',
-          defined: '#E5E5E5',
-          'in-progress': '#FDEFA7',
-          completed: '#FDEFA7',
-          accepted: '#BFF0B8',
-          released: '#B0C9FF'
-        })
+        'state-color-backlog': '#E5E5E5',
+        'state-color-defined': '#E5E5E5',
+        'state-color-in-progress': '#FDEFA7',
+        'state-color-completed': '#FDEFA7',
+        'state-color-accepted': '#BFF0B8',
+        'state-color-released': '#B0C9FF'
       }
     },
 
     stories: null,
     features: null,
     initiatives: null,
-
 
     layout: {
       type: 'vbox'
@@ -86,7 +85,7 @@ Ext.define('CustomApp', {
       this.mixins.observable.constructor.call(this, config);
       //this.mixins.maskable.constructor.call(this, {maskMsg: 'Loading...'});
 
-      this.addEvents('load');
+      this.addEvents('load', 'scheduleStatesLoaded');
 
       this.fidTemplate = Rally.nav.DetailLink;
       this.cardTemplate = new Ext.XTemplate(
@@ -113,11 +112,21 @@ Ext.define('CustomApp', {
     },
 
     getSettingsFields: function () {
-      return [{
+      var fields = [{
         name: 'storyCardsPerColumn',
         label: 'Story Cards per Column',
         xtype: 'rallynumberfield'
       }];
+
+      Ext.Array.each(this.scheduleStates, function (state) {
+        fields.push({
+          name: 'state-color-' + state.toLowerCase(),
+          label: state + ' Color',
+          xtype: 'rallytextfield'
+        });
+      });
+
+      return fields;
     },
 
     getOptions: function () {
@@ -136,11 +145,9 @@ Ext.define('CustomApp', {
       var dlgWidth = 200;
 
       if (!this.legendDlg) {
-        var states = ['Backlog', 'Defined', 'In-Progress', 'Completed', 'Accepted', 'Released'];
-        var stateColors = Ext.JSON.decode(this.getSetting('stateColors'));
         var legend = [];
 
-        Ext.Array.each(states, function (state) {
+        Ext.Array.each(me.scheduleStates, function (state) {
           legend.push({
             xtype: 'container',
             layout: {
@@ -155,7 +162,7 @@ Ext.define('CustomApp', {
               height: 16,
               style: {
                 border: 'solid 1px black',
-                backgroundColor: stateColors[state.toLowerCase()],
+                backgroundColor: 'state-color-' + state.toLowerCase(),
                 marginRight: '5px'
               },
               html: '&nbsp'
@@ -196,6 +203,38 @@ Ext.define('CustomApp', {
 
     addContent: function(tb) {
       var me = this;
+
+      Ext.create('Rally.data.WsapiDataStore', {
+        autoLoad: true,
+        model: 'TypeDefinition',
+        filters: [{
+          property: 'TypePath',
+          operator: '=',
+          value: 'HierarchicalRequirement'
+        }],
+        fetch: ['Attributes', 'ElementName', 'AllowedValues', 'StringValue'],
+        listeners: {
+          load: function (store, recs) {
+            console.dir(recs);
+            Ext.Array.each(recs[0].get('Attributes'), function (attribute) {
+              if (attribute.ElementName !== 'ScheduleState') { return; }
+
+              me.scheduleStates = [];
+              Ext.Array.each(attribute.AllowedValues, function (value) {
+                if (value.StringValue) {
+                  me.scheduleStates.push(value.StringValue);
+                }
+              });
+
+              me.fireEvent('scheduleStatesLoaded', me.scheduleStates);
+            });
+          }
+        }
+      });
+
+      me.on('scheduleStatesLoaded', function (states) {
+        console.log('States', me, states);
+      });
 
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
@@ -540,7 +579,14 @@ Ext.define('CustomApp', {
         me.addToContainer(me.addProject(projectId));
       });
 
-      var colors = Ext.JSON.decode(me.getSetting('stateColors'));
+      var colors = {};
+      Ext.Object.each(me.getSettings(), function(k, v) {
+        if (k.indexOf('state-color-') !== -1) {
+          colors[k.replace('state-color-', '')] = v;
+        }
+      });
+
+      console.log('Colors', colors);
       Ext.Object.each(colors, function (k, v) {
         Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
           elt.style.backgroundColor = v;
