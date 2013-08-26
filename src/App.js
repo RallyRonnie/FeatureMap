@@ -234,7 +234,7 @@ Ext.define('CustomApp', {
       });
 
       me.on('scheduleStatesLoaded', function (states) {
-        console.log('States', me, states);
+        //console.log('States', me, states);
       });
 
       Ext.create('Rally.data.WsapiDataStore', {
@@ -587,7 +587,7 @@ Ext.define('CustomApp', {
         }
       });
 
-      console.log('Colors', colors);
+      //console.log('Colors', colors);
       Ext.Object.each(colors, function (k, v) {
         Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
           elt.style.backgroundColor = v;
