@@ -1,4 +1,3 @@
-//window.//console = window.//console || { log: function () {}, dir: function () {} };
 var Ext = window.Ext4 || window.Ext;
 
 Ext.define('Rally.print.FeatureMap', {
@@ -95,7 +94,7 @@ Ext.define('CustomApp', {
           '<div class="card {type} state-{state} {blocked}">',
         '</tpl>',
           '<p class="name">{fidLink} {name}</p>',
-          '<tpl if="size"><p class="size">{size} SP</p></tpl>',
+          '<tpl if="size"><p class="size">{size}</p></tpl>',
         '</div>'
       );
       this.headerTemplate = new Ext.XTemplate(
@@ -696,11 +695,22 @@ Ext.define('CustomApp', {
       var storyContainer;
       var storyColumnContainer;
 
-      data.type    = 'feature';
-      data.name    = me.features[featureId].get('Name');
-      data.size    = me.features[featureId].get('LeafStoryPlanEstimateTotal') || 0;
+      data.type        = 'feature';
+      data.name        = me.features[featureId].get('Name');
+      data.size        = '';
+      data.storySize   = me.features[featureId].get('LeafStoryPlanEstimateTotal') || 0;
+      data.featureSize = 0;
       if (me.features[featureId].get('PreliminaryEstimate')) {
-        data.size = data.size || me.features[featureId].get('PreliminaryEstimate').Value;
+        data.featureSize = me.features[featureId].get('PreliminaryEstimate').Value;
+      }
+      if (data.featureSize) {
+        data.size = data.featureSize + ' FP';
+      }
+      if (data.featureSize && data.storySize) {
+        data.size = data.size + ' / ';
+      }
+      if (data.storySize) {
+        data.size = data.size + data.storySize + ' SP';
       }
       data.color   = bgColor;
       data.fidLink = me.fidTemplate.getLink({record: me.features[featureId].data, text: me.features[featureId].get('FormattedID'), showHover: false});
