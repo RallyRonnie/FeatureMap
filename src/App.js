@@ -487,6 +487,8 @@ Ext.define('CustomApp', {
       me.totalAcceptedPoints      = 0;
       me.totalStoriesNotEstimated = 0;
 
+      me.projectList = {};
+
       Ext.Object.each(stories, function (oid, story) {
         var featureOid    = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
@@ -516,6 +518,8 @@ Ext.define('CustomApp', {
         initiativeOid = parseInt(initiativeOid + '', 10);
         projectOid    = parseInt(projectOid + '', 10);
 
+        me.projectList[projectOid] = 1;
+
         me.projectsByStory[oid]                = me.projectsByStory[oid] || {};
         me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
         me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
@@ -544,6 +548,7 @@ Ext.define('CustomApp', {
           initiativeOid = 0;
         }
 
+        me.projectList[projectOid] = 1;
         me.projectsByFeature[featureOid]       = me.projectsByFeature[featureOid] || {};
         me.projectsByInitiative[initiativeOid] = me.projectsByInitiative[initiativeOid] || {};
 
@@ -574,7 +579,7 @@ Ext.define('CustomApp', {
         })
       });
 
-      Ext.Object.each(me.storyByProject, function (projectId, stories) {
+      Ext.Object.each(me.projectList, function (projectId, __) {
         //console.log('Adding project', projectId, me.projects[projectId].get('Name'));
         me.addToContainer(me.addProject(projectId));
       });
