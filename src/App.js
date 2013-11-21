@@ -296,7 +296,7 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: me.piTypes['0'],
         autoLoad: true,
-        fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal'],
+        fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
         filters: tb.getQueryFilter(),
         sorters: [{
           property: 'Rank',
@@ -691,26 +691,18 @@ Ext.define('CustomApp', {
       return container;
     },
 
-    addFeature: function (projectId, initiativeId, featureId) {
-      //console.log('Adding Feature', featureId);
-
-      var me      = this;
-      var i       = 0;
-      var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);
-      var bgColor = me.initiatives[initiativeId].get('DisplayColor');
-      var data    = {};
-      var storyContainer;
-      var storyColumnContainer;
+    _dataForFeature: function (record) {
+      var me = this;
+      var data = {};
 
       data.type        = 'feature';
-      data.objectid    = featureId;
-      data._ref        = me.features[featureId].get('_ref');
-      data.name        = me.features[featureId].get('Name');
+      data._ref        = record.get('_ref');
+      data.name        = record.get('Name');
       data.size        = '';
-      data.storySize   = me.features[featureId].get('LeafStoryPlanEstimateTotal') || 0;
+      data.storySize   = record.get('LeafStoryPlanEstimateTotal') || 0;
       data.featureSize = 0;
-      if (me.features[featureId].get('PreliminaryEstimate')) {
-        data.featureSize = me.features[featureId].get('PreliminaryEstimate').Value;
+      if (record.get('PreliminaryEstimate')) {
+        data.featureSize = record.get('PreliminaryEstimate').Value;
       }
       if (data.featureSize) {
         data.size = data.featureSize + ' FP';
@@ -721,8 +713,22 @@ Ext.define('CustomApp', {
       if (data.storySize) {
         data.size = data.size + data.storySize + ' SP';
       }
-      data.color   = bgColor;
-      data.fidLink = me.fidTemplate.getLink({record: me.features[featureId].data, text: me.features[featureId].get('FormattedID'), showHover: false});
+      data.color   = record.raw.Parent.DisplayColor || 'black';
+      data.fidLink = me.fidTemplate.getLink({record: record.data, text: record.get('FormattedID'), showHover: false});
+
+      return data;
+    },
+
+    addFeature: function (projectId, initiativeId, featureId) {
+      //console.log('Adding Feature', featureId);
+
+      var me      = this;
+      var i       = 0;
+      var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);
+      var bgColor = me.initiatives[initiativeId].get('DisplayColor');
+      var data    = me._dataForFeature(me.features[featureId]);
+      var storyContainer;
+      var storyColumnContainer;
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
@@ -732,7 +738,7 @@ Ext.define('CustomApp', {
         items: [{
           xtype: 'container',
           layout: 'table',
-          itemId: featureId,
+          oid: featureId,
           items: [{
             xtype: 'box',
             html: me.cardTemplate.apply(data)
@@ -851,7 +857,32 @@ Ext.define('CustomApp', {
     },
 
     _onObjectUpdated: function (record) {
-      console.log('updated', record);
+      var me = this;
+      var cards = this.query('component[oid=' +  record.get('ObjectID') + ']');
+      var data;
+
+      console.log('updated', record, cards);
+
+      if (record.get('_type').toLowerCase().indexOf('portfolioitem') !== -1) {
+        var m = record.getProxy().getModel();
+
+        m.load(Rally.util.Ref.getOidFromRef(record.raw._ref), {
+          fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
+          callback: function (result) {
+            console.log('res', result);
+
+            data = me._dataForFeature(result);
+            _.each(cards, function (c) {
+              console.log(c);
+              c.removeAll();
+              c.add({
+                xtype: 'box',
+                html: me.cardTemplate.apply(data)
+              });
+            });
+          }
+        });
+      }
     }
 
 });
