@@ -103,3 +103,23 @@ html {
 .header .info {
   font-size: 12px
 }
+
+.story > .iteration-status {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+}
+.story > .iteration-status-planned {
+  background-color: yellow;
+}
+.story > .iteration-status-active {
+  background-color: green;
+}
+.story > .iteration-status-late {
+  background-color: red;
+}
+.story > .iteration-status-unplanned {
+  background-color: grey;
+}

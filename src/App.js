@@ -95,6 +95,7 @@ Ext.define('CustomApp', {
         '</tpl>',
           '<p class="name">{fidLink} {name}</p>',
           '<tpl if="size"><p class="size">{size}</p></tpl>',
+          '<div class="iteration-status iteration-status-{iterationStatus}"></div>',
         '</div>'
       );
       this.headerTemplate = new Ext.XTemplate(
@@ -311,7 +312,7 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'HierarchicalRequirement',
         autoLoad: true,
-        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason'],
+        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate'],
         filters: [{
           property: 'Feature.Release.Name',
           value: tb.getRecord().get('Name')
@@ -807,20 +808,49 @@ Ext.define('CustomApp', {
       return container;
     },
 
-    addStory: function (storyId) {
+    _dataForStory: function (record) {
+      var iStart;
+      var iEnd;
       var me   = this;
+      var now  = new Date();
       var data = {
-        name:    me.stories[storyId].get('Name'),
-        _ref:    me.stories[storyId].get('_ref'),
-        size:    me.stories[storyId].get('PlanEstimate'),
-        state:   ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
+        name:    record.get('Name'),
+        _ref:    record.get('_ref'),
+        size:    record.get('PlanEstimate'),
+        state:   ('' + record.get('ScheduleState')).toLowerCase(),
         type:    'story',
-        blocked: me.stories[storyId].get('Blocked') ? 'blocked' :'',
+        blocked: record.get('Blocked') ? 'blocked' :'',
 
-        fidLink: me.fidTemplate.getLink({record: me.stories[storyId].data, text: me.stories[storyId].get('FormattedID'), showHover: false})
+        iterationStatus: 'unplanned',
+
+        fidLink: me.fidTemplate.getLink({record: record.data, text: record.get('FormattedID'), showHover: false})
       };
 
-      //console.log('Story data', data);
+      if (record.raw.Iteration) {
+        data.iterationStatus = 'planned';
+
+        iStart = Rally.util.DateTime.fromIsoString(record.raw.Iteration.StartDate);
+        iEnd = Rally.util.DateTime.fromIsoString(record.raw.Iteration.EndDate);
+
+        if (Rally.util.DateTime.getDifference(now, iStart, 'day') > 0) {
+          data.iterationStatus = 'active';
+        }
+
+        if (Rally.util.DateTime.getDifference(now, iEnd, 'day') > 0) {
+          if (!!record.raw.AcceptedDate) {
+            data.iterationStatus = 'done';
+          } else {
+            data.iterationStatus = 'late';
+          }
+        }
+      }
+
+      return data;
+    },
+
+    addStory: function (storyId) {
+      var me   = this;
+      var data = me._dataForStory(me.stories[storyId]);
 
       var container = Ext.create('Ext.container.Container', {
         layout: {
