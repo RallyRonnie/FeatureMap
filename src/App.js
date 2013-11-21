@@ -204,6 +204,8 @@ Ext.define('CustomApp', {
     addContent: function(tb) {
       var me = this;
 
+      me.subscribe(me, Rally.Message.objectUpdate, me._onObjectUpdated, me);
+
       Ext.create('Rally.data.WsapiDataStore', {
         autoLoad: true,
         model: 'TypeDefinition',
@@ -701,6 +703,8 @@ Ext.define('CustomApp', {
       var storyColumnContainer;
 
       data.type        = 'feature';
+      data.objectid    = featureId;
+      data._ref        = me.features[featureId].get('_ref');
       data.name        = me.features[featureId].get('Name');
       data.size        = '';
       data.storySize   = me.features[featureId].get('LeafStoryPlanEstimateTotal') || 0;
@@ -726,8 +730,29 @@ Ext.define('CustomApp', {
           align: 'stretch'
         },
         items: [{
-          xtype: 'box',
-          html: me.cardTemplate.apply(data)
+          xtype: 'container',
+          layout: 'table',
+          itemId: featureId,
+          items: [{
+            xtype: 'box',
+            html: me.cardTemplate.apply(data)
+          }],
+          listeners: {
+            afterrender: function (t) {
+              var d = this;
+              t.getEl().on('mousedown', function (e) {
+                e.preventDefault();
+              });
+
+              t.getEl().on('dblclick', function(e) {
+                e.preventDefault();
+                console.log('hi', d);
+                Rally.nav.Manager.edit(d._ref);
+                return false;
+              });
+            },
+            scope: (function (d) { return d; }(data))
+          }
         }]
       });
 
@@ -780,6 +805,7 @@ Ext.define('CustomApp', {
       var me   = this;
       var data = {
         name:    me.stories[storyId].get('Name'),
+        _ref:    me.stories[storyId].get('_ref'),
         size:    me.stories[storyId].get('PlanEstimate'),
         state:   ('' + me.stories[storyId].get('ScheduleState')).toLowerCase(),
         type:    'story',
@@ -795,12 +821,37 @@ Ext.define('CustomApp', {
           type: 'hbox'
         },
         items: [{
-          xtype: 'box',
-          html: me.cardTemplate.apply(data)
+          xtype: 'container',
+          layout: 'table',
+          itemId: storyId,
+          items: [{
+            xtype: 'box',
+            html: me.cardTemplate.apply(data)
+          }],
+          listeners: {
+            afterrender: function (t) {
+              var d = this;
+              t.getEl().on('mousedown', function (e) {
+                e.preventDefault();
+              });
+
+              t.getEl().on('dblclick', function(e) {
+                e.preventDefault();
+                console.log(d);
+                Rally.nav.Manager.edit(d._ref);
+                return false;
+              });
+            },
+            scope: (function (d) { return d; }(data))
+          }
         }]
       });
 
       return container;
+    },
+
+    _onObjectUpdated: function (record) {
+      console.log('updated', record);
     }
 
 });
