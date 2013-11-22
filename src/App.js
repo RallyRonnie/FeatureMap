@@ -731,7 +731,7 @@ Ext.define('CustomApp', {
       if (data.storySize) {
         data.size = data.size + data.storySize + ' SP';
       }
-      data.color   = record.raw.Parent.DisplayColor || 'black';
+      data.color   = record.raw.Parent ? record.raw.Parent.DisplayColor || 'black' : 'black';
       data.fidLink = me.fidTemplate.getLink({record: record.data, text: record.get('FormattedID'), showHover: false});
 
       return data;
@@ -743,7 +743,6 @@ Ext.define('CustomApp', {
       var me      = this;
       var i       = 0;
       var spc     = parseInt(me.getSetting('storyCardsPerColumn') + '', 10);
-      var bgColor = me.initiatives[initiativeId].get('DisplayColor');
       var data    = me._dataForFeature(me.features[featureId]);
       var storyContainer;
       var storyColumnContainer;
@@ -930,11 +929,11 @@ Ext.define('CustomApp', {
       fetchS = ['ObjectID', 'FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate'];
 
       if (record.get('_type').toLowerCase().indexOf('portfolioitem') !== -1) {
-        fetchF = fetch;
+        fetch = fetchF;
         dataFn = Ext.Function.bind(me._dataForFeature, me);
       } else {
+        fetch = fetchS;
         dataFn = Ext.Function.bind(me._dataForStory, me);
-        fetchS = fetch;
       }
 
       me.showMask('Updating...');
