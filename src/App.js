@@ -425,6 +425,12 @@ Ext.define('CustomApp', {
         autoLoad: true,
         filters: filter,
         fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
+        context: {
+          workspace: me.getContext().getDataContext().workspace,
+          project: null, //me.getContext().getDataContext().project,
+          projectScopeUp: true,
+          projectScopeDown: true
+        },
         sorters: [{
           property: 'Rank',
           direction: 'ASC'
@@ -513,6 +519,8 @@ Ext.define('CustomApp', {
         var featureOid    = Rally.util.Ref.getOidFromRef(story.get('Feature')._ref);
         var projectOid    = Rally.util.Ref.getOidFromRef(story.get('Project')._ref);
         var initiativeOid;
+
+        if (!features.hasOwnProperty(featureOid)) { return; }
 
         if (features[featureOid].get('Parent')) {
           initiativeOid = Rally.util.Ref.getOidFromRef(features[featureOid].get('Parent')._ref);
@@ -603,20 +611,6 @@ Ext.define('CustomApp', {
         //console.log('Adding project', projectId, me.projects[projectId].get('Name'));
         me.addToContainer(me.addProject(projectId));
       });
-
-      //var colors = {};
-      //Ext.Object.each(me.getSettings(), function(k, v) {
-        //if (k.indexOf('state-color-') !== -1) {
-          //colors[k.replace('state-color-', '')] = v;
-        //}
-      //});
-
-      ////console.log('Colors', colors);
-      //Ext.Object.each(colors, function (k, v) {
-        //Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
-          //elt.style.backgroundColor = v;
-        //});
-      //});
     },
 
     addProject: function (projectId) {
