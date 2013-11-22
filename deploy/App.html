@@ -250,7 +250,24 @@ Ext.define('CustomApp', {
       });
 
       me.on('scheduleStatesLoaded', function (states) {
-        //console.log('States', me, states);
+        var colors = {};
+        var rules = [];
+
+        Ext.Object.each(me.getSettings(), function(k, v) {
+          if (k.indexOf('state-color-') !== -1) {
+            colors[k.replace('state-color-', '')] = v;
+          }
+        });
+
+        Ext.Object.each(colors, function (k, v) {
+          rules.push(
+            '.story.state-' + k + ' {' +
+            '  background-color: ' + v + ';' +
+            '}'
+          );
+        });
+
+        Ext.util.CSS.createStyleSheet(rules.join('\n'), 'generated');
       });
 
       Ext.create('Rally.data.WsapiDataStore', {
@@ -601,19 +618,19 @@ Ext.define('CustomApp', {
         me.addToContainer(me.addProject(projectId));
       });
 
-      var colors = {};
-      Ext.Object.each(me.getSettings(), function(k, v) {
-        if (k.indexOf('state-color-') !== -1) {
-          colors[k.replace('state-color-', '')] = v;
-        }
-      });
+      //var colors = {};
+      //Ext.Object.each(me.getSettings(), function(k, v) {
+        //if (k.indexOf('state-color-') !== -1) {
+          //colors[k.replace('state-color-', '')] = v;
+        //}
+      //});
 
-      //console.log('Colors', colors);
-      Ext.Object.each(colors, function (k, v) {
-        Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
-          elt.style.backgroundColor = v;
-        });
-      });
+      ////console.log('Colors', colors);
+      //Ext.Object.each(colors, function (k, v) {
+        //Ext.Array.each(Ext.query('.story.state-' + k), function(elt) {
+          //elt.style.backgroundColor = v;
+        //});
+      //});
     },
 
     addProject: function (projectId) {
@@ -837,7 +854,9 @@ Ext.define('CustomApp', {
 
         iterationStatus: 'unplanned',
 
-        fidLink: me.fidTemplate.getLink({record: record.data, text: record.get('FormattedID'), showHover: false})
+        fidLink: me.fidTemplate.getLink({record: record.data, text: record.get('FormattedID'), showHover: false}),
+
+        _record: record
       };
 
       if (record.raw.Iteration) {
@@ -851,7 +870,7 @@ Ext.define('CustomApp', {
         }
 
         if (Rally.util.DateTime.getDifference(now, iEnd, 'day') > 0) {
-          if (!!record.raw.AcceptedDate) {
+          if (!!record.raw.AcceptedDate || (!record.raw.PlanEstimate)) {
             data.iterationStatus = 'done';
           } else {
             data.iterationStatus = 'late';
@@ -873,7 +892,7 @@ Ext.define('CustomApp', {
         items: [{
           xtype: 'container',
           layout: 'table',
-          itemId: storyId,
+          oid: storyId,
           items: [{
             xtype: 'box',
             html: me.cardTemplate.apply(data)
@@ -887,7 +906,6 @@ Ext.define('CustomApp', {
 
               t.getEl().on('dblclick', function(e) {
                 e.preventDefault();
-                console.log(d);
                 Rally.nav.Manager.edit(d._ref);
                 return false;
               });
@@ -900,35 +918,64 @@ Ext.define('CustomApp', {
       return container;
     },
 
-    _onObjectUpdated: function (record) {
+    _refreshCard: function (record, dataFn) {
       var me = this;
       var cards = this.query('component[oid=' +  record.get('ObjectID') + ']');
-      var data;
+      var data = dataFn(record);
 
-      console.log('updated', record, cards);
+      console.log(cards);
+      _.each(cards, function (c) {
+        c.removeAll();
+        c.add({
+          xtype: 'box',
+          html: me.cardTemplate.apply(data)
+        });
+      });
+
+    },
+
+    _onObjectUpdated: function (record) {
+      var me = this;
+      var m = record.getProxy().getModel();
+      var fetch, fetchS, fetchF;
+      var dataFn;
+
+      fetchF = ['ObjectID', 'FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'];
+      fetchS = ['ObjectID', 'FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate'];
 
       if (record.get('_type').toLowerCase().indexOf('portfolioitem') !== -1) {
-        var m = record.getProxy().getModel();
-
-        m.load(Rally.util.Ref.getOidFromRef(record.raw._ref), {
-          fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
-          callback: function (result) {
-            console.log('res', result);
-
-            data = me._dataForFeature(result);
-            _.each(cards, function (c) {
-              console.log(c);
-              c.removeAll();
-              c.add({
-                xtype: 'box',
-                html: me.cardTemplate.apply(data)
-              });
-            });
-          }
-        });
+        fetchF = fetch;
+        dataFn = Ext.Function.bind(me._dataForFeature, me);
+      } else {
+        dataFn = Ext.Function.bind(me._dataForStory, me);
+        fetchS = fetch;
       }
-    }
 
+      me.showMask('Updating...');
+      m.load(record.get('ObjectID'), {
+        fetch: fetch,
+        callback: function (result) {
+          me._refreshCard(result, dataFn);
+
+          if (result.get('_type').toLowerCase() === 'hierarchicalrequirement') {
+            Rally.data.ModelFactory.getModel({
+              type: me.piTypes['0'],
+              success: function (feature) {
+                feature.load(result.get(me.piTypes['0'].split('/')[1]).ObjectID, {
+                  fetch: fetchF,
+                  callback: function (f) {
+                    me._refreshCard(f, Ext.Function.bind(me._dataForFeature, me));
+                    me.hideMask();
+                  }
+                });
+              }
+            });
+          } else {
+            me.hideMask();
+          }
+        }
+      });
+    }
 });
 
             
