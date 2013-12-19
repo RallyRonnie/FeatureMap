@@ -194,11 +194,68 @@ Ext.define('CustomApp', {
           });
         });
 
+        legend.push({
+          xtype: 'container',
+          layout: {
+            type: 'hbox'
+          },
+          style: {
+            margin: '5px'
+          },
+          items: [{
+            xtype: 'box',
+            width: 16,
+            height: 16,
+            html: '&nbsp'
+          }, {
+            xtype: 'box',
+            height: 16,
+            style: {
+              verticalAlign: 'middle',
+              display: 'table-cell',
+              paddingTop: '2px'
+            },
+            html: '&nbsp' 
+          }]
+        });
+
+        _.forOwn({ 'Not Scheduled': 'grey', 'Scheduled in Future Iteration': 'yellow', 'Scheduled in Current Iteration': 'green', 'Not Completed in Past Iteration': 'red' }, function (color, lbl) {
+          legend.push({
+            xtype: 'container',
+            layout: {
+              type: 'hbox'
+            },
+            style: {
+              margin: '5px'
+            },
+            items: [{
+              xtype: 'box',
+              width: 16,
+              height: 16,
+              style: {
+                border: 'solid 1px black',
+                backgroundColor: color,
+                marginRight: '5px'
+              },
+              html: '&nbsp'
+            }, {
+              xtype: 'box',
+              height: 16,
+              style: {
+                verticalAlign: 'middle',
+                display: 'table-cell',
+                paddingTop: '2px'
+              },
+              html: ' ' + lbl
+            }]
+          });
+        });
+
         this.legendDlg = Ext.create('Rally.ui.dialog.Dialog', {
           autoShow: true,
           draggable: true,
           width: dlgWidth,
-          height: me.scheduleStates.length * 27,
+          height: (4  + me.scheduleStates.length) * 27,
           title: 'Story Color Legend',
           closable: true,
           closeAction: 'hide',
