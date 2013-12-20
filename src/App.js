@@ -91,12 +91,15 @@ Ext.define('CustomApp', {
         '<tpl if="color != null">',
           '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
         '<tpl else>',
-          '<div class="card {type} state-{state} {blocked}">',
+          '<div class="card {type} state-{state} {blocked} {pred_succ}">',
         '</tpl>',
-          '<p class="name">{fidLink} {name}</p>',
-          '<tpl if="size"><p class="size">{size}</p></tpl>',
-          '<div class="iteration-status iteration-status-{iterationStatus}"></div>',
-        '</div>'
+            '<p class="name">{fidLink} {name}</p>',
+            '<tpl if="size"><p class="size">{size}</p></tpl>',
+            '<div class="iteration-status iteration-status-{iterationStatus}"></div>',
+            '<tpl if="pred_succ">',
+              '<div class="link_indicator"></div>',
+            '</tpl>',
+          '</div>'
       );
       this.headerTemplate = new Ext.XTemplate(
         '<div class="header" style="width: {width}">',
@@ -141,6 +144,38 @@ Ext.define('CustomApp', {
       }];
     },
 
+    _buildLegendEntry: function (label, color) {
+      return {
+        xtype: 'container',
+        layout: {
+          type: 'hbox'
+        },
+        style: {
+          margin: '5px'
+        },
+        items: [{
+          xtype: 'box',
+          width: 16,
+          height: 16,
+          style: {
+            border: color ? 'solid 1px black' : '',
+            backgroundColor: color,
+            marginRight: '5px'
+          },
+          html: '&nbsp'
+        }, {
+          xtype: 'box',
+          height: 16,
+          style: {
+            verticalAlign: 'middle',
+            display: 'table-cell',
+            paddingTop: '2px'
+          },
+          html: ' ' + label
+        }]
+      };
+    },
+
     showLegend: function () {
       var dlgWidth = 200;
       var me = this;
@@ -148,93 +183,14 @@ Ext.define('CustomApp', {
       if (!this.legendDlg) {
         var legend = [];
 
-        Ext.Array.each(me.scheduleStates, function (state) {
-          legend.push({
-            xtype: 'container',
-            layout: {
-              type: 'hbox'
-            },
-            style: {
-              margin: '5px'
-            },
-            items: [{
-              xtype: 'box',
-              width: 16,
-              height: 16,
-              style: {
-                border: 'solid 1px black',
-                backgroundColor: me.getSetting('state-color-' + state.toLowerCase()),
-                marginRight: '5px'
-              },
-              html: '&nbsp'
-            }, {
-              xtype: 'box',
-              height: 16,
-              style: {
-                verticalAlign: 'middle',
-                display: 'table-cell',
-                paddingTop: '2px'
-              },
-              html: ' ' + state
-            }]
-          });
-        });
+        _.each(me.scheduleStates, function (state) {
+          legend.push(me._buildLegendEntry(state, me.getSetting('state-color-' + state.toLowerCase()) || 'white'));
+        }, this);
 
-        legend.push({
-          xtype: 'container',
-          layout: {
-            type: 'hbox'
-          },
-          style: {
-            margin: '5px'
-          },
-          items: [{
-            xtype: 'box',
-            width: 16,
-            height: 16,
-            html: '&nbsp'
-          }, {
-            xtype: 'box',
-            height: 16,
-            style: {
-              verticalAlign: 'middle',
-              display: 'table-cell',
-              paddingTop: '2px'
-            },
-            html: '&nbsp' 
-          }]
-        });
+        legend.push(me._buildLegendEntry('', ''));
 
         _.forOwn({ 'Not Scheduled': 'grey', 'Scheduled in Future Iteration': 'yellow', 'Scheduled in Current Iteration': 'green', 'Not Completed in Past Iteration': 'red' }, function (color, lbl) {
-          legend.push({
-            xtype: 'container',
-            layout: {
-              type: 'hbox'
-            },
-            style: {
-              margin: '5px'
-            },
-            items: [{
-              xtype: 'box',
-              width: 16,
-              height: 16,
-              style: {
-                border: 'solid 1px black',
-                backgroundColor: color,
-                marginRight: '5px'
-              },
-              html: '&nbsp'
-            }, {
-              xtype: 'box',
-              height: 16,
-              style: {
-                verticalAlign: 'middle',
-                display: 'table-cell',
-                paddingTop: '2px'
-              },
-              html: ' ' + lbl
-            }]
-          });
+          legend.push(me._buildLegendEntry(label, color));
         });
 
         this.legendDlg = Ext.create('Rally.ui.dialog.Dialog', {
@@ -334,9 +290,9 @@ Ext.define('CustomApp', {
           load: function (store, recs) {
             me.piTypes = {};
 
-            Ext.Array.each(recs, function (type) {
+            _.each(recs, function (type) {
               //console.log('Found PI Type', type, type.get('Ordinal'), type.get('TypePath'));
-              me.piTypes[type.get('Ordinal') + ''] = type.get('TypePath');
+              me.piTypes[type.get('Ordinal') + ''] = type;
             });
             me.onScopeChange(tb);
           },
@@ -365,11 +321,12 @@ Ext.define('CustomApp', {
 
     loadData: function (tb) {
       var me = this;
+      var featureName = me.piTypes['0'].get('ElementName');
 
       me.showMask("Loading data for " + tb.getRecord().get('Name') + "...");
 
       Ext.create('Rally.data.WsapiDataStore', {
-        model: me.piTypes['0'],
+        model: me.piTypes['0'].get('TypePath'),
         autoLoad: true,
         fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
         filters: tb.getQueryFilter(),
@@ -386,15 +343,15 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'HierarchicalRequirement',
         autoLoad: true,
-        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate'],
+        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate', 'Predecessors', 'Successors'],
         filters: [{
-          property: 'Feature.Release.Name',
+          property: featureName + '.Release.Name',
           value: tb.getRecord().get('Name')
         }, {
-          property: 'Feature.Release.ReleaseStartDate',
+          property: featureName + '.Release.ReleaseStartDate',
           value: tb.getRecord().raw.ReleaseStartDate
         }, {
-          property: 'Feature.Release.ReleaseDate',
+          property: featureName + '.Release.ReleaseDate',
           value: tb.getRecord().raw.ReleaseDate
         }, {
           property: 'DirectChildrenCount',
@@ -478,7 +435,7 @@ Ext.define('CustomApp', {
       }
 
       Ext.create('Rally.data.WsapiDataStore', {
-        model: me.piTypes['1'],
+        model: me.piTypes['1'].get('TypePath'),
         autoLoad: true,
         filters: filter,
         fetch: ['FormattedID', 'Name', 'PreliminaryEstimate', 'Value', 'Children', 'Project', 'DisplayColor'],
@@ -534,11 +491,11 @@ Ext.define('CustomApp', {
       });
 
       Rally.data.ModelFactory.getModel({
-        type: me.piTypes['1'],
+        type: me.piTypes['1'].get('TypePath'),
         success: function (model) {
           var blank = Ext.create(model, {
             ObjectID: 0,
-            Name: '(No ' + me.piTypes['1'].split('/')[1] + ')'
+            Name: '(No ' + me.piTypes['1'].get('ElementName') + ')'
           });
 
           me.initiatives[0] = blank;
@@ -914,6 +871,32 @@ Ext.define('CustomApp', {
         }
       }
 
+      data.pred_succ = '';
+      if (record.raw.Predecessors.length) {
+        data.pred_succ = "pred";
+        if (_.some(record.raw.Predecessors, function (itm) { return !_.contains(['Accepted', 'Released'], itm.ScheduleState); })) {
+          data.pred_succ = "pred_open";
+        }
+      }
+
+      var recDate;
+      if (record.raw.Iteration) {
+        recDate = Rally.util.DateTime.fromIsoString(record.raw.Iteration.EndDate);
+      }
+      if (record.raw.Successors.length) {
+        data.pred_succ = data.pred_succ ? data.pred_succ + '_succ' : 'succ';
+        if (recDate) {
+          if (_.some(record.raw.Predecessors, function (itm) {
+            if (!itm.Iteration) { return false; }
+
+            var date = Rally.util.DateTime.fromIsoString(itm.Iteration.EndDate);
+            return Rally.util.DateTime.difference(recDate, date, 'day') > 0;
+          })) {
+            data.pred_succ = data.pred_succ + '_need';
+          }
+        }
+      }
+
       return data;
     },
 
@@ -977,7 +960,7 @@ Ext.define('CustomApp', {
       var dataFn;
 
       fetchF = ['ObjectID', 'FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'];
-      fetchS = ['ObjectID', 'FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate'];
+      fetchS = ['ObjectID', 'FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate', 'Predecessor', 'Successor'];
 
       if (record.get('_type').toLowerCase().indexOf('portfolioitem') !== -1) {
         fetch = fetchF;
@@ -995,9 +978,9 @@ Ext.define('CustomApp', {
 
           if (result.get('_type').toLowerCase() === 'hierarchicalrequirement') {
             Rally.data.ModelFactory.getModel({
-              type: me.piTypes['0'],
+              type: me.piTypes['0'].get('TypePath'),
               success: function (feature) {
-                feature.load(result.get(me.piTypes['0'].split('/')[1]).ObjectID, {
+                feature.load(result.get(me.piTypes['0'].get('ElementName')).ObjectID, {
                   fetch: fetchF,
                   callback: function (f) {
                     me._refreshCard(f, Ext.Function.bind(me._dataForFeature, me));
