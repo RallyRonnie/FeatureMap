@@ -186,6 +186,7 @@ html {
 }
 
 .canvas {
+  background:none !important;
   position: absolute;
   top: 0px;
   left: 0px;

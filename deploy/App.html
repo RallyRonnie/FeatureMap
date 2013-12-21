@@ -104,7 +104,7 @@ Ext.define('CustomApp', {
 
       this.on('afterrender', function (t) {
         var mainDiv = t.getEl().first();
-        console.log('app loaded', mainDiv.getWidth(false), mainDiv.getHeight(false));
+        //console.log('app loaded', mainDiv.getWidth(false), mainDiv.getHeight(false));
 
         var cDiv = Ext.DomHelper.append(mainDiv, {
           tag: 'div',
@@ -814,7 +814,7 @@ Ext.define('CustomApp', {
 
               t.getEl().on('dblclick', function(e) {
                 e.preventDefault();
-                console.log('hi', d);
+                //console.log('hi', d);
                 Rally.nav.Manager.edit(d._ref);
                 return false;
               });
@@ -985,9 +985,9 @@ Ext.define('CustomApp', {
                     var succCards = _(succs).map(function (p) { return Ext.query('.oid-' + p.ObjectID); }).flatten();
                     var topOffset = me.viewportDiv.dom.parentNode.scrollTop;
 
-                    console.log('expand indicator', sid, li.getBottom(useLocal), li.getLeft(useLocal), li.getWidth(useLocal));
-                    console.log('XY', me.viewportDiv.dom);
-                    console.dir(me.viewportDiv.dom);
+                    //console.log('expand indicator', sid, li.getBottom(useLocal), li.getLeft(useLocal), li.getWidth(useLocal));
+                    //console.log('XY', me.viewportDiv.dom);
+                    //console.dir(me.viewportDiv.dom);
                     //console.dir(succCards);
 
                     if (me.links) {
@@ -1034,7 +1034,7 @@ Ext.define('CustomApp', {
       var cards = this.query('component[oid=' +  record.get('ObjectID') + ']');
       var data = dataFn(record);
 
-      console.log(cards);
+      //console.log(cards);
       _.each(cards, function (c) {
         c.removeAll();
         c.add({
@@ -1290,6 +1290,7 @@ html {
 }
 
 .canvas {
+  background:none !important;
   position: absolute;
   top: 0px;
   left: 0px;
