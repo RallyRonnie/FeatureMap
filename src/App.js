@@ -80,18 +80,40 @@ Ext.define('CustomApp', {
     },
 
     constructor: function (config) {
+      var me = this;
+
       this.callParent([config]);
       this.mixins.observable.constructor.call(this, config);
       //this.mixins.maskable.constructor.call(this, {maskMsg: 'Loading...'});
 
       this.addEvents('load', 'scheduleStatesLoaded');
 
+      this.on('afterrender', function (t) {
+        var mainDiv = t.getEl().first();
+        console.log('app loaded', mainDiv.getWidth(false), mainDiv.getHeight(false));
+
+        var cDiv = Ext.DomHelper.append(mainDiv, {
+          tag: 'div',
+          cls: 'canvas',
+          id: 'canvas'
+        });
+
+        me.canvas = Raphael(cDiv);
+        me.viewportDiv = mainDiv;
+        me.canvasDiv = cDiv;
+      });
+
+      this.on('afterlayout', function(t) {
+        var mainDiv = t.getEl().first();
+        me.canvas.setSize(mainDiv.getWidth(false), mainDiv.getHeight(false));
+      });
+
       this.fidTemplate = Rally.nav.DetailLink;
       this.cardTemplate = new Ext.XTemplate(
         '<tpl if="color != null">',
-          '<div class="card {type} state-{state}" style=\'border-top: solid 8px {color}\'>',
+          '<div class="card {type} state-{state} oid-{oid}" style=\'border-top: solid 8px {color}\'>',
         '<tpl else>',
-          '<div class="card {type} state-{state} {blocked} {pred_succ}">',
+          '<div class="card {type} state-{state} oid-{oid} {blocked} {pred_succ}">',
         '</tpl>',
             '<p class="name">{fidLink} {name}</p>',
             '<tpl if="size"><p class="size">{size}</p></tpl>',
@@ -328,7 +350,7 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: me.piTypes['0'].get('TypePath'),
         autoLoad: true,
-        fetch: ['FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
+        fetch: ['ObjectID', 'FormattedID', 'Name', 'Value', 'Parent', 'Project', 'UserStories', 'Children', 'PreliminaryEstimate', 'DirectChildrenCount', 'LeafStoryPlanEstimateTotal', 'DisplayColor'],
         filters: tb.getQueryFilter(),
         sorters: [{
           property: 'Rank',
@@ -343,7 +365,7 @@ Ext.define('CustomApp', {
       Ext.create('Rally.data.WsapiDataStore', {
         model: 'HierarchicalRequirement',
         autoLoad: true,
-        fetch: ['FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate', 'Predecessors', 'Successors'],
+        fetch: ['ObjectID', 'FormattedID', 'Name', 'ScheduleState', 'PlanEstimate', 'Feature', 'Parent', 'Project', 'Blocked', 'BlockedReason', 'Iteration', 'StartDate', 'EndDate', 'AcceptedDate', 'Predecessors', 'Successors'],
         filters: [{
           property: featureName + '.Release.Name',
           value: tb.getRecord().get('Name')
@@ -722,6 +744,7 @@ Ext.define('CustomApp', {
       var data = {};
 
       data.type        = 'feature';
+      data.oid         = record.get('ObjectID');
       data._ref        = record.get('_ref');
       data.name        = record.get('Name');
       data.size        = '';
@@ -839,6 +862,7 @@ Ext.define('CustomApp', {
       var now  = new Date();
       var data = {
         name:    record.get('Name'),
+        oid:     record.get('ObjectID'),
         _ref:    record.get('_ref'),
         size:    record.get('PlanEstimate'),
         state:   ('' + record.get('ScheduleState')).toLowerCase(),
@@ -890,7 +914,7 @@ Ext.define('CustomApp', {
             if (!itm.Iteration) { return false; }
 
             var date = Rally.util.DateTime.fromIsoString(itm.Iteration.EndDate);
-            return Rally.util.DateTime.difference(recDate, date, 'day') > 0;
+            return Rally.util.DateTime.getDifference(recDate, date, 'day') > 0;
           })) {
             data.pred_succ = data.pred_succ + '_need';
           }
@@ -919,6 +943,8 @@ Ext.define('CustomApp', {
           listeners: {
             afterrender: function (t) {
               var d = this;
+              var linkIndicator = t.getEl().select('div.link_indicator').first();
+
               t.getEl().on('mousedown', function (e) {
                 e.preventDefault();
               });
@@ -928,6 +954,58 @@ Ext.define('CustomApp', {
                 Rally.nav.Manager.edit(d._ref);
                 return false;
               });
+
+              if (linkIndicator) {
+                linkIndicator.on('click', (function (li, sid) { 
+                  var preds = me.stories[sid].raw.Predecessors;
+                  var succs = me.stories[sid].raw.Successors;
+
+                  return function (e) {
+                    e.preventDefault();
+                    var useLocal = false;
+                    var bottom = li.getBottom(useLocal);
+                    var left = li.getLeft(useLocal);
+                    var width = li.getWidth(useLocal);
+                    var path;
+                    var predCards = _(preds).map(function (p) { return Ext.query('.oid-' + p.ObjectID); }).flatten();
+                    var succCards = _(succs).map(function (p) { return Ext.query('.oid-' + p.ObjectID); }).flatten();
+                    var topOffset = me.viewportDiv.dom.parentNode.scrollTop;
+
+                    console.log('expand indicator', sid, li.getBottom(useLocal), li.getLeft(useLocal), li.getWidth(useLocal));
+                    console.log('XY', me.viewportDiv.dom);
+                    console.dir(me.viewportDiv.dom);
+                    //console.dir(succCards);
+
+                    if (me.links) {
+                      _(me.links).each(function (l) { l.remove(); });
+                      me.links = null;
+                    } else {
+                      me.links = [];
+                      predCards.each(function (c) {
+                        var target = Ext.get(c);
+                        path = [];
+                        path.push(['M', left + (~~(width / 2)), topOffset + bottom]);
+                        path.push(['C', left, topOffset + target.getBottom(useLocal) + 100, target.getLeft(useLocal), topOffset + target.getBottom(useLocal) + 50, target.getLeft(useLocal) + 10, topOffset + target.getBottom(useLocal)]);
+
+                        me.links.push(me.canvas.path(path).attr({stroke: 'blue', 'stroke-width': 3}));
+                      });
+                      succCards.each(function (c) {
+                        var target = Ext.get(c);
+                        var p;
+                        path = [];
+                        path.push(['M', left + (~~(width / 2)), topOffset + bottom]);
+                        path.push(['C', left, topOffset + target.getBottom(useLocal) + 100, target.getLeft(useLocal), topOffset + target.getBottom(useLocal) + 50, target.getLeft(useLocal) + 10, topOffset + target.getBottom(useLocal)]);
+
+                        p = me.canvas.path(path).attr({stroke: 'grey', 'stroke-width': 3});
+                        me.links.push(p);
+                      });
+                      if (me.links.length === 0) { me.links = null; }
+                    }
+
+                    return false;
+                  };
+                })(linkIndicator, storyId));
+              }
             },
             scope: (function (d) { return d; }(data))
           }

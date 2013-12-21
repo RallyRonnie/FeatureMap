@@ -125,10 +125,13 @@ html {
 }
 
 .story > .link_indicator {
-  position: relative;
-  bottom: 20px;
-  left: 0px;
-  background-color: red;
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  z-index: 1;
+  background-color: transparent;
 }
 
 .story.pred {
@@ -180,4 +183,13 @@ html {
     url(data:image/gif;base64,R0lGODlhEAAQAOYAAP//////AP8A//8AAAD//wD/AAAA/wAAACdnoj+BvqvT99Lp//X13NfXyd3d0NjYy8nJwMrKwsnJwdDQyMrKw5KRfs3Mt/Tz29LRvNHQu8zLt769qv385Ly7qfz75NrZxcnItsbFs7++re3s1+zr1sXEs7i3p7Gwoa6tnszLusrJuL++ru3s2eno1YOCdN3c0JCOfdnXxMfGvM3MwsrJv+zr4ezr4sjHv8bFvcrJwtXUzdXUznd0Zc7NyIWCdWNfUF9aS2FcTl9ZSlNOQkM+MzQuIoyJg0Q+MzYvI8zKx0M8M1hSSndybEQ9NVhSS3ZxbIuGgcnHxYeCfv///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFMALAAAAAAQABAAAAeqgFNTCgmChoYJCoaECAuOj44IiYMJCJaXmJaTjJCQkoqChIeHk4dRRqhRp6mjpxMvE6ivsVGHRj0tNiQoKCM2LbGHTzsrJio3OCkmIjpPwhEXHCw0MiwcFxLOhk8UJSAxMxAfICE52oJPL9EsJygsHgwO51NDNhgaGz4uHRYZNUOHhjyowOMHkSNBeMBoANDQECBIlCyRAsVJkyJCGqJ7wkSVoChJmDzRFggAOw==)
     no-repeat
     left bottom;
+}
+
+.canvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 0px;
+  height: 0px;
+  pointer-events: none;
 }
