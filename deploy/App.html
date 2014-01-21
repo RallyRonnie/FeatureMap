@@ -225,7 +225,7 @@ Ext.define('CustomApp', {
 
         legend.push(me._buildLegendEntry('', ''));
 
-        _.forOwn({ 'Not Scheduled': 'grey', 'Scheduled in Future Iteration': 'yellow', 'Scheduled in Current Iteration': 'green', 'Not Completed in Past Iteration': 'red' }, function (color, lbl) {
+        _.forOwn({ 'Not Scheduled': 'grey', 'Scheduled in Future Iteration': 'yellow', 'Scheduled in Current Iteration': 'green', 'Not Completed in Past Iteration': 'red' }, function (color, label) {
           legend.push(me._buildLegendEntry(label, color));
         });
 
@@ -896,7 +896,7 @@ Ext.define('CustomApp', {
         iStart = Rally.util.DateTime.fromIsoString(record.raw.Iteration.StartDate);
         iEnd = Rally.util.DateTime.fromIsoString(record.raw.Iteration.EndDate);
 
-        if (Rally.util.DateTime.getDifference(now, iStart, 'day') > 0) {
+        if (Rally.util.DateTime.getDifference(now, iStart, 'day') >= 0) {
           data.iterationStatus = 'active';
         }
 
