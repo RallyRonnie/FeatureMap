@@ -852,13 +852,13 @@ Ext.define('CustomApp', {
         iEnd = Rally.util.DateTime.fromIsoString(record.raw.Iteration.EndDate);
 
         if (record.raw.Name.indexOf('3rd Party') !== -1) {
-          console.group('Story', record.raw.Name);
-          console.log('Data', record.raw);
-          console.log('iStart', iStart);
-          console.log('iEnd', iEnd);
-          console.log('iStart Diff', Rally.util.DateTime.getDifference(now, iStart, 'day'));
-          console.log('iEnd Diff', Rally.util.DateTime.getDifference(now, iEnd, 'day'));
-          console.groupEnd();
+          //console.group('Story', record.raw.Name);
+          //console.log('Data', record.raw);
+          //console.log('iStart', iStart);
+          //console.log('iEnd', iEnd);
+          //console.log('iStart Diff', Rally.util.DateTime.getDifference(now, iStart, 'day'));
+          //console.log('iEnd Diff', Rally.util.DateTime.getDifference(now, iEnd, 'day'));
+          //console.groupEnd();
         }
 
         if (Rally.util.DateTime.getDifference(now, iStart, 'day') > 0) {
