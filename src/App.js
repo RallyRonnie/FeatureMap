@@ -851,12 +851,22 @@ Ext.define('CustomApp', {
         iStart = Rally.util.DateTime.fromIsoString(record.raw.Iteration.StartDate);
         iEnd = Rally.util.DateTime.fromIsoString(record.raw.Iteration.EndDate);
 
+        if (record.raw.Name.indexOf('3rd Party') !== -1) {
+          console.group('Story', record.raw.Name);
+          console.log('Data', record.raw);
+          console.log('iStart', iStart);
+          console.log('iEnd', iEnd);
+          console.log('iStart Diff', Rally.util.DateTime.getDifference(now, iStart, 'day'));
+          console.log('iEnd Diff', Rally.util.DateTime.getDifference(now, iEnd, 'day'));
+          console.groupEnd();
+        }
+
         if (Rally.util.DateTime.getDifference(now, iStart, 'day') > 0) {
           data.iterationStatus = 'active';
         }
 
         if (Rally.util.DateTime.getDifference(now, iEnd, 'day') > 0) {
-          if (!!record.raw.AcceptedDate || (!record.raw.PlanEstimate)) {
+          if (!!record.raw.AcceptedDate /*|| (!record.raw.PlanEstimate)*/) {
             data.iterationStatus = 'done';
           } else {
             data.iterationStatus = 'late';
