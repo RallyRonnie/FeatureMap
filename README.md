@@ -6,7 +6,7 @@ FeatureMap
 Visualization of Initiatives and Features down to Stories in a Story
 Map form
 
-![Screenshot](https://raw.github.com/Echo3ToEcho7/FeatureMap/master/screenshot/screenshot.png)
+![Screenshot](https://raw.github.com/RallyRonnie/FeatureMap/master/screenshot/screenshot.png)
 
 ## License
 
